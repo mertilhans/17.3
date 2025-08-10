@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 00:23:50 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/10 21:18:07 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/10 23:58:33 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -180,28 +180,40 @@ char *handle_dollar(char *str, int *i, t_env *env_list, int exit_status)
             (*i)++;
         
         len = *i - start_i;
+        if (len <= 0)
+            return (ft_strdup(""));
+            
         var_name = gb_malloc(len + 1);
         if (!var_name)
-            return (NULL);
+            return (ft_strdup(""));
+            
         ft_memcpy(var_name, str + start_i, len);
         var_name[len] = '\0';
         
+        // Önce env'den ara
         env_node = find_env(env_list, var_name);
         if (env_node && env_node->value)
-            expanded = ft_strdup(env_node->value);
-        else
         {
-            export_value = find_export_value(var_name);
-            if (export_value)
-                expanded = ft_strdup(export_value);
-            else
-                expanded = ft_strdup("");
+            expanded = ft_strdup(env_node->value);
+            gc_free(var_name);
+            return (expanded ? expanded : ft_strdup(""));
         }
         
+        // Sonra export'tan ara
+        export_value = find_export_value(var_name);
+        if (export_value)
+        {
+            expanded = ft_strdup(export_value);
+            gc_free(var_name);
+            return (expanded ? expanded : ft_strdup(""));
+        }
+        
+        // Bulunamadı, boş string döndür
         gc_free(var_name);
-        return (expanded);
+        return (ft_strdup(""));
     }
     
+    // Geçersiz karakter sonrası $, sadece $ döndür
     return (ft_strdup("$"));
 }
 
