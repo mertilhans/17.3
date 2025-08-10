@@ -1,5 +1,36 @@
 #include "shell.h"
+// DÜZELTME: Identifier validation fonksiyonları
+static int	is_valid_identifier_start(char c)
+{
+	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_');
+}
 
+static int	is_valid_identifier_char(char c)
+{
+	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || 
+			(c >= '0' && c <= '9') || c == '_');
+}
+
+static int	validate_identifier(char *identifier)
+{
+	int	i;
+
+	if (!identifier || identifier[0] == '\0')
+		return (0);
+	if (identifier[0] == '$')
+		return (0);
+	if (!is_valid_identifier_start(identifier[0]))
+		return (0);
+	
+	i = 1;
+	while (identifier[i])
+	{
+		if (!is_valid_identifier_char(identifier[i]))
+			return (0);
+		i++;
+	}
+	return (1);
+}
 // export listesinin hepsini yazdır abi
 void	export_print_all(t_export **export_list)
 {
@@ -16,7 +47,7 @@ void	export_print_all(t_export **export_list)
 	}
 }
 
-// değer birleştirme işlemi  export TEST="hello world" gibiler için
+// DÜZELTME: Boşluklu değerleri doğru işlemek için yeniden yazıldı
 char	*export_build_value(t_parser *cmd, int *i, char *value)
 {
 	char	*full_value;
@@ -59,7 +90,7 @@ char	*export_build_value(t_parser *cmd, int *i, char *value)
 	return (full_value);
 }
 
-// key=value formatındaki argumentları işle reis
+// DÜZELTME: Güvenli string işleme ile yeniden yazıldı
 void	export_process_keyvalue(t_parser *cmd, int *i, t_env **env_list)
 {
 	t_export	**export_list;
@@ -113,39 +144,9 @@ void	export_process_keyvalue(t_parser *cmd, int *i, t_env **env_list)
 	
 	*eq_pos = '='; // Restore original string
 }
-static int	is_valid_identifier_start(char c)
-{
-	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_');
-}
 
-static int	is_valid_identifier_char(char c)
-{
-	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || 
-			(c >= '0' && c <= '9') || c == '_');
-}
 
-static int	validate_identifier(char *identifier)
-{
-	int	i;
-
-	if (!identifier || identifier[0] == '\0')
-		return (0);
-	if (identifier[0] == '$')
-		return (0);
-	if (!is_valid_identifier_start(identifier[0]))
-		return (0);
-	
-	i = 1;
-	while (identifier[i])
-	{
-		if (!is_valid_identifier_char(identifier[i]))
-			return (0);
-		i++;
-	}
-	return (1);
-}
-
-// ana export fonksiyonu - bu arkadaş çok iş yapıyor
+// ana export fonksiyonu - DÜZELTME: Güvenli işleme eklendi
 void	builtin_export(t_parser *cmd, t_env **env_list)
 {
 	int			i;
@@ -216,6 +217,12 @@ void	builtin_unset(t_parser *cmd, t_env **env_list)
 	}
 	while (cmd->argv[i])
 	{
+		if (!validate_identifier(cmd->argv[i]))
+		{
+			printf("bash: unset: `%s': not a valid identifier\n", cmd->argv[i]);
+			i++;
+			continue;
+		}
 		unset_env_value(env_list, cmd->argv[i]);
 		unset_export_value(export_list, cmd->argv[i]);
 		i++;
