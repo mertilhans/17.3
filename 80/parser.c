@@ -10,7 +10,7 @@
 
 void	ft_clean_init(t_parser *cmd)
 {
-	cmd->argv_cap = 1;
+	cmd->argv_cap = 8; // Başlangıçta daha büyük bir değer
 	cmd->argv = gb_malloc(sizeof(char *) * cmd->argv_cap);
 	if (!cmd->argv)
 	{
@@ -21,6 +21,32 @@ void	ft_clean_init(t_parser *cmd)
 	cmd->next = NULL;
 	cmd->parse_error = 0;
 	cmd->heredoc_fd = -2;
+}
+
+// Güvenli argv genişletme fonksiyonu
+static void expand_argv_if_needed(t_parser *cmd, int argc)
+{
+	char **new_argv;
+	int i;
+
+	if (argc + 2 >= cmd->argv_cap) // +2 for safety margin
+	{
+		cmd->argv_cap *= 2;
+		new_argv = gb_malloc(sizeof(char *) * cmd->argv_cap);
+		if (!new_argv)
+		{
+			perror("malloc failed");
+			exit(EXIT_FAILURE);
+		}
+		i = 0;
+		while (i < argc)
+		{
+			new_argv[i] = cmd->argv[i];
+			i++;
+		}
+		gc_free(cmd->argv);
+		cmd->argv = new_argv;
+	}
 }
 
 void	add_redirection(t_parser *cmd, t_redir_type type, char *filename)
@@ -152,7 +178,7 @@ void	ft_redir_heredoc(t_token *tokens, t_parser *cmd, t_env *env_list,
 		int exit_status)
 {
 	char	*delimiter;
-		char *clean_delimiter;
+	char *clean_delimiter;
 
 	(void)env_list;
 	(void)exit_status;
@@ -177,11 +203,10 @@ void	ft_redir_heredoc(t_token *tokens, t_parser *cmd, t_env *env_list,
 		cmd->parse_error = 1;
 }
 
+// DÜZELTME: ft_loop_3 fonksiyonu tamamen yeniden yazıldı
 void	ft_loop_3(t_token **tokens, t_parser *cmd, int *argc, t_env *env_list,
 		int exit_status)
 {
-	int		i;
-	char	**new_argv;
 	char	*original_token;
 	char	*expanded;
 	int		is_unquoted_empty_expansion;
@@ -189,35 +214,19 @@ void	ft_loop_3(t_token **tokens, t_parser *cmd, int *argc, t_env *env_list,
 	int		is_quoted;
 	char	**split_args;
 	int		j;
-	int		value;
 
-	i = 0;
 	if ((*tokens)->type == TOKEN_WORD)
 	{
-		if (*argc + 1 >= cmd->argv_cap)
-		{
-			cmd->argv_cap *= 2;
-			new_argv = gb_malloc(sizeof(char *) * cmd->argv_cap);
-			if (!new_argv)
-			{
-				perror("malloc failed");
-				exit(EXIT_FAILURE);
-			}
-			while (i < *argc)
-			{
-				new_argv[i] = cmd->argv[i];
-				i++;
-			}
-			gc_free(cmd->argv);
-			cmd->argv = new_argv;
-		}
+		// Argv genişletme kontrolü
+		expand_argv_if_needed(cmd, *argc);
+		
 		original_token = (*tokens)->value;
 		expanded = expand_with_quotes(original_token, env_list, exit_status);
 		is_unquoted_empty_expansion = 0;
+		
 		if (expanded && expanded[0] == '\0')
 		{
-			if (!ft_strchr(original_token, '"') && !ft_strchr(original_token,
-					'\''))
+			if (!ft_strchr(original_token, '"') && !ft_strchr(original_token, '\''))
 			{
 				if (ft_strlen(original_token) > 1 && original_token[0] == '$'
 					&& (isalnum(original_token[1]) || original_token[1] == '_'))
@@ -226,14 +235,17 @@ void	ft_loop_3(t_token **tokens, t_parser *cmd, int *argc, t_env *env_list,
 				}
 			}
 		}
+		
 		if (*argc == 0 && is_unquoted_empty_expansion)
 		{
-			gc_free(expanded);
+			if (expanded)
+				gc_free(expanded);
 			return ;
 		}
+		
 		has_dollar_expansion = ft_strchr(original_token, '$') != NULL;
-		is_quoted = ft_strchr(original_token, '"') || ft_strchr(original_token,
-				'\'');
+		is_quoted = ft_strchr(original_token, '"') || ft_strchr(original_token, '\'');
+		
 		if (has_dollar_expansion && expanded && !is_quoted
 			&& (ft_strchr(expanded, ' ') || ft_strchr(expanded, '\t')))
 		{
@@ -241,31 +253,50 @@ void	ft_loop_3(t_token **tokens, t_parser *cmd, int *argc, t_env *env_list,
 			j = 0;
 			while (split_args && split_args[j])
 			{
-				cmd->argv[*(argc)++] = ft_strdup(split_args[j]);
+				// Her yeni argüman için argv'i genişlet
+				expand_argv_if_needed(cmd, *argc);
+				cmd->argv[*argc] = ft_strdup(split_args[j]);
+				if (!cmd->argv[*argc])
+				{
+					perror("strdup failed for split arg");
+					exit(EXIT_FAILURE);
+				}
+				(*argc)++;
 				j++;
 			}
+			// split_args'ı temizle
 			if (split_args)
 			{
-				value = 0;
-				while (split_args[value])
+				j = 0;
+				while (split_args[j])
 				{
-					gc_free(split_args[value]);
-					value++;
+					gc_free(split_args[j]);
+					j++;
 				}
+				gc_free(split_args);
 			}
-			gc_free(expanded);
+			if (expanded)
+				gc_free(expanded);
 		}
 		else
 		{
+			// Argv genişletme kontrolü
+			expand_argv_if_needed(cmd, *argc);
+			
 			if (expanded)
-				cmd->argv[(*argc)++] = expanded;
+			{
+				cmd->argv[*argc] = expanded;
+			}
 			else
-				cmd->argv[(*argc)++] = ft_strdup((*tokens)->value);
-		}
-		if (!cmd->argv[(*argc) - 1])
-		{
-			perror("strdup failed for argv element");
-			exit(EXIT_FAILURE);
+			{
+				cmd->argv[*argc] = ft_strdup((*tokens)->value);
+				if (!cmd->argv[*argc])
+				{
+					perror("strdup failed for argv element");
+					exit(EXIT_FAILURE);
+				}
+			}
+			(*argc)++;
 		}
 	}
 }
@@ -335,7 +366,11 @@ t_token	*ft_control_token(t_token *tokens, t_parser **cmd_list,
 	ft_clean_init(cmd);
 	while (tokens && tokens->type != TOKEN_PIPE && tokens->type != TOKEN_EOF)
 		ft_loop(&tokens, cmd, &argc, env_list, exit_status);
+	
+	// argv array'ini null-terminate et
+	expand_argv_if_needed(cmd, argc);
 	cmd->argv[argc] = NULL;
+	
 	if (!(*cmd_list))
 		*cmd_list = cmd;
 	else
@@ -345,6 +380,7 @@ t_token	*ft_control_token(t_token *tokens, t_parser **cmd_list,
 		tokens = tokens->next;
 	return (tokens);
 }
+
 int	token_ctrl(t_token *tokens)
 {
 	if (tokens->type == TOKEN_REDIR_IN)
@@ -371,12 +407,6 @@ t_parser	*parse_tokens(t_token *tokens, t_env *env_list, int exit_status)
 		return (NULL);
 	}
 
-	// if (tokens->type == TOKEN_PIPE && !tokens->next)
-	//{
-	//   printf("bash: syntax error near unexpected token `|'\n");
-	//    return (NULL);
-
-	//}
 	while (tokens && tokens->type != TOKEN_EOF)
 	{
 		while (tokens && tokens->type == TOKEN_PIPE)

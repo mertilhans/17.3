@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 04:24:43 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 00:09:04 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 00:19:08 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,14 +101,24 @@ char	*ft_strndup(const char *str, size_t n)
 	char	*result;
 	char	*res;
 	size_t	i;
+	size_t	str_len;
 
-	i = 0;
 	if (!str)
 		return (NULL);
+		
+	str_len = 0;
+	while (str[str_len])
+		str_len++;
+	
+	if (n > str_len)
+		n = str_len;
+		
 	result = gb_malloc(n + 1);
 	if (!result)
 		return (NULL);
+		
 	res = result;
+	i = 0;
 	while (i < n && str[i])
 	{
 		*res++ = str[i];

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   export_basic.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: husarpka <husarpka@student.42.fr>          +#+  +:+       +#+        */
+/*   By: merilhan <merilhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/05 16:29:28 by husarpka         ###   ########.fr       */
+/*   Updated: 2025/08/11 00:18:38 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,8 @@ char	*find_export_value(char *key)
 void	set_export_value_existing(t_export *existing, const char *value)
 {
 	if (existing->value)
-		gc_free(existing->value);
+		env_gc_free(existing->value);
+		
 	if (value)
 		existing->value = ft_strdup((char *)value);
 	else
@@ -70,11 +71,29 @@ void	set_export_value_new(t_export **export_list, const char *key,
 	new_export = env_gb_malloc(sizeof(t_export));
 	if (!new_export)
 		return ;
+		
 	new_export->key = ft_strdup((char *)key);
+	if (!new_export->key)
+	{
+		env_gc_free(new_export);
+		return ;
+	}
+	
 	if (value)
+	{
 		new_export->value = ft_strdup((char *)value);
+		if (!new_export->value)
+		{
+			env_gc_free(new_export->key);
+			env_gc_free(new_export);
+			return ;
+		}
+	}
 	else
+	{
 		new_export->value = NULL;
+	}
+	
 	new_export->next = *export_list;
 	*export_list = new_export;
 }
@@ -84,6 +103,9 @@ void	set_export_value(t_export **export_list, const char *key,
 {
 	t_export	*existing;
 
+	if (!export_list || !key)
+		return;
+		
 	existing = find_export(*export_list, key);
 	if (existing)
 		set_export_value_existing(existing, value);

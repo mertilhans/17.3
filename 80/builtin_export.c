@@ -1,4 +1,5 @@
 #include "shell.h"
+
 // DÜZELTME: Identifier validation fonksiyonları
 static int	is_valid_identifier_start(char c)
 {
@@ -31,6 +32,7 @@ static int	validate_identifier(char *identifier)
 	}
 	return (1);
 }
+
 // export listesinin hepsini yazdır abi
 void	export_print_all(t_export **export_list)
 {
@@ -47,58 +49,15 @@ void	export_print_all(t_export **export_list)
 	}
 }
 
-// DÜZELTME: Boşluklu değerleri doğru işlemek için yeniden yazıldı
-char	*export_build_value(t_parser *cmd, int *i, char *value)
-{
-	char	*full_value;
-	int		j;
-	int		total_len;
-	int		value_len;
-
-	if (!value)
-		return (NULL);
-	
-	value_len = ft_strlen(value);
-	total_len = value_len;
-	
-	// Sonraki argümanları kontrol et ve toplam uzunluğu hesapla
-	j = *i + 1;
-	while (cmd->argv[j] && !ft_strchr(cmd->argv[j], '='))
-	{
-		total_len += ft_strlen(cmd->argv[j]) + 1; // +1 for space
-		j++;
-	}
-	
-	// Bellek ayır
-	full_value = gb_malloc(total_len + 1);
-	if (!full_value)
-		return (NULL);
-	
-	// İlk değeri kopyala
-	ft_strcpy(full_value, value);
-	
-	// Sonraki argümanları birleştir
-	j = *i + 1;
-	while (cmd->argv[j] && !ft_strchr(cmd->argv[j], '='))
-	{
-		ft_strcat(full_value, " ");
-		ft_strcat(full_value, cmd->argv[j]);
-		j++;
-	}
-	
-	*i = j - 1; // Index'i güncelle
-	return (full_value);
-}
-
 // DÜZELTME: Güvenli string işleme ile yeniden yazıldı
 void	export_process_keyvalue(t_parser *cmd, int *i, t_env **env_list)
 {
 	t_export	**export_list;
 	char		*current_arg;
 	char		*eq_pos;
-	char		*key;
 	char		*value;
-	char		*full_value;
+	char		*key_copy;
+	char		*value_copy;
 
 	export_list = get_export_list();
 	current_arg = cmd->argv[*i];
@@ -107,44 +66,37 @@ void	export_process_keyvalue(t_parser *cmd, int *i, t_env **env_list)
 	if (!eq_pos)
 		return;
 		
-	*eq_pos = '\0'; // Geçici olarak böl
-	key = current_arg;
+	// Key'i güvenli şekilde ayır
+	key_copy = ft_strndup(current_arg, eq_pos - current_arg);
+	if (!key_copy)
+		return;
+		
 	value = eq_pos + 1;
 	
-	// Boş değer kontrolü
+	// Value'yu güvenli şekilde kopyala
 	if (!value || ft_strlen(value) == 0)
 	{
-		set_export_value(export_list, key, "");
-		set_env_value(env_list, key, "");
+		value_copy = ft_strdup("");
 	}
 	else
 	{
-		// Çoklu argüman varsa birleştir
-		if (cmd->argv[*i + 1] && !ft_strchr(cmd->argv[*i + 1], '='))
-		{
-			full_value = export_build_value(cmd, i, value);
-			if (full_value)
-			{
-				set_export_value(export_list, key, full_value);
-				set_env_value(env_list, key, full_value);
-				gc_free(full_value);
-			}
-			else
-			{
-				set_export_value(export_list, key, value);
-				set_env_value(env_list, key, value);
-			}
-		}
-		else
-		{
-			set_export_value(export_list, key, value);
-			set_env_value(env_list, key, value);
-		}
+		value_copy = ft_strdup(value);
 	}
 	
-	*eq_pos = '='; // Restore original string
+	if (!value_copy)
+	{
+		gc_free(key_copy);
+		return;
+	}
+	
+	// Export ve env listelerine ekle
+	set_export_value(export_list, key_copy, value_copy);
+	set_env_value(env_list, key_copy, value_copy);
+	
+	// Belleği temizle
+	gc_free(key_copy);
+	gc_free(value_copy);
 }
-
 
 // ana export fonksiyonu - DÜZELTME: Güvenli işleme eklendi
 void	builtin_export(t_parser *cmd, t_env **env_list)
@@ -154,7 +106,6 @@ void	builtin_export(t_parser *cmd, t_env **env_list)
 	char		*current_arg;
 	char		*eq_pos;
 	char		*identifier;
-	char		original_char;
 
 	i = 1;
 	export_list = get_export_list();
@@ -171,20 +122,23 @@ void	builtin_export(t_parser *cmd, t_env **env_list)
 		
 		if (eq_pos)
 		{
-			// Geçici olarak böl
-			original_char = *eq_pos;
-			*eq_pos = '\0';
-			identifier = current_arg;
-			
-			if (!validate_identifier(identifier))
+			// Identifier'ı güvenli şekilde ayır
+			identifier = ft_strndup(current_arg, eq_pos - current_arg);
+			if (!identifier)
 			{
-				printf("bash: export: `%s': not a valid identifier\n", identifier);
-				*eq_pos = original_char; // Restore
 				i++;
 				continue;
 			}
 			
-			*eq_pos = original_char; // Restore
+			if (!validate_identifier(identifier))
+			{
+				printf("bash: export: `%s': not a valid identifier\n", identifier);
+				gc_free(identifier);
+				i++;
+				continue;
+			}
+			
+			gc_free(identifier);
 			export_process_keyvalue(cmd, &i, env_list);
 		}
 		else

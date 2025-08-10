@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   env_operations.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: husarpka <husarpka@student.42.fr>          +#+  +:+       +#+        */
+/*   By: merilhan <merilhan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/05 16:31:31 by husarpka         ###   ########.fr       */
+/*   Updated: 2025/08/11 00:18:29 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,13 @@
 
 static void	update_existing_env(t_env *existing, char *value)
 {
-	gc_free(existing->value);
-	existing->value = ft_strdup(value);
+	if (existing->value)
+		env_gc_free(existing->value);
+	
+	if (value)
+		existing->value = ft_strdup(value);
+	else
+		existing->value = NULL;
 }
 
 static t_env	*create_new_env_node(char *key, char *value)
@@ -30,8 +35,29 @@ static t_env	*create_new_env_node(char *key, char *value)
 		perror("malloc failed");
 		return (NULL);
 	}
+	
 	new_node->key = ft_strdup(key);
-	new_node->value = ft_strdup(value);
+	if (!new_node->key)
+	{
+		env_gc_free(new_node);
+		return (NULL);
+	}
+	
+	if (value)
+	{
+		new_node->value = ft_strdup(value);
+		if (!new_node->value)
+		{
+			env_gc_free(new_node->key);
+			env_gc_free(new_node);
+			return (NULL);
+		}
+	}
+	else
+	{
+		new_node->value = NULL;
+	}
+	
 	new_node->next = NULL;
 	return (new_node);
 }
@@ -41,19 +67,20 @@ void	set_env_value(t_env **env_list, char *key, char *value)
 	t_env	*existing;
 	t_env	*new_node;
 
-	if (!env_list)
-	{
-		return ;
-	}
+	if (!env_list || !key)
+		return;
+		
 	existing = find_env(*env_list, key);
 	if (existing)
 	{
 		update_existing_env(existing, value);
 		return ;
 	}
+	
 	new_node = create_new_env_node(key, value);
 	if (!new_node)
 		return ;
+		
 	new_node->next = *env_list;
 	*env_list = new_node;
 }
@@ -64,9 +91,12 @@ static void	remove_env_node(t_env **env_list, t_env *prev, t_env *current)
 		prev->next = current->next;
 	else
 		*env_list = current->next;
-	free(current->key);
-	free(current->value);
-	free(current);
+		
+	if (current->key)
+		env_gc_free(current->key);
+	if (current->value)
+		env_gc_free(current->value);
+	env_gc_free(current);
 }
 
 void	unset_env_value(t_env **env_list, char *key)
@@ -76,8 +106,10 @@ void	unset_env_value(t_env **env_list, char *key)
 
 	if (!env_list || !*env_list || !key)
 		return ;
+		
 	current = *env_list;
 	prev = NULL;
+	
 	while (current)
 	{
 		if (ft_strcmp(current->key, key) == 0)
