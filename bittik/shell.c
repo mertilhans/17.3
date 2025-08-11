@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 03:36:25 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 04:21:48 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 05:20:10 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,72 +132,73 @@ void	cleanup_env_array(char **env_array)
 	env_gc_free(env_array);
 }
 
-int	process_command_line(char *line, t_env **env_list, char **env)
+int process_command_line(char *line, t_env **env_list, char **env)
 {
-	t_token	*tokens;
-	t_parser	*cmd_list;
-	char		**updated_env;
-	int		exit_status;
+    t_token *tokens;
+    t_parser *cmd_list;
+    char **updated_env;
 
-	add_history(line);
-	gb_malloc(ft_strlen(line));
-	tokens = tokenize_input(line);
-	if (!tokens)
-		return(get_last_exit_status());
-	cmd_list = parse_tokens(tokens, *env_list);
-	if (!cmd_list)
-		return(get_last_exit_status());
-	updated_env = env_list_to_array(*env_list);
-	if (updated_env)
-	{
-		exit_status = execute_cmds(cmd_list, updated_env, env_list);
-		cleanup_env_array(updated_env);
-	}
-	else
-		exit_status = execute_cmds(cmd_list, env, env_list);
-	set_last_exit_status(exit_status);
-	return (0);
+    add_history(line);
+    gb_malloc(ft_strlen(line));
+    
+    tokens = tokenize_input(line);
+    if (!tokens)
+        // Tokenize hatası - zaten set_last_exit_status yapılmış
+        return 0; // Shell devam etsin
+    cmd_list = parse_tokens(tokens, *env_list);
+    if (!cmd_list)
+        return 0; // Shell devam etsin
+    updated_env = env_list_to_array(*env_list);
+    if (updated_env)
+    {
+        execute_cmds(cmd_list, updated_env, env_list);
+        cleanup_env_array(updated_env);
+    }
+    else
+        execute_cmds(cmd_list, env, env_list);
+    return 0; // Shell devam etsin
 }
 
-void	shell_loop(t_env *env_list, char **env)
+void shell_loop(t_env *env_list, char **env)
 {
-	char	*line;
+    char *line;
 
-	while (1)
-	{
-		line = readline("MiniShell->>>   ");
-		if (!line)
-		{
-			free(line);
-			break ;
-		}
-	
-		if (line[0] == '\0')
-			free(line);
-
-		else
-		{
-			if (process_command_line(line, &env_list, env))
-			{
-				free(line);
-				break;
-			}
-			
-		}	
-	}
-
+    while (1)
+    {
+        line = readline("MiniShell->>>   ");
+        if (!line)
+        {
+            printf("exit\n");
+            break;
+        }
+        if (line[0] == '\0')
+        {
+            free(line);
+            continue; // Boş satır, devam et
+        }
+        if (process_command_line(line, &env_list, env))
+        {
+            free(line);
+            break; // Shell'den çık
+        }
+        free(line);
+    }
 }
-int	main(int ac, char **av, char **env)
+int main(int ac, char **av, char **env)
 {
-	t_env	*env_list;
-	
-	(void)ac;
-	(void)av;
-	  
-	env_list = initialize_shell(env);
-	shell_loop(env_list, env);
-	rl_clear_history();
-	env_gb_free_all();
-	gb_free_all();
-	return (0);
+    t_env *env_list;
+    
+    (void)ac;
+    (void)av;
+    
+    set_last_exit_status(0);
+      
+    env_list = initialize_shell(env);
+    shell_loop(env_list, env);
+    
+    rl_clear_history();
+    env_gb_free_all();
+    gb_free_all();
+    
+    return get_last_exit_status(); 
 }

@@ -46,6 +46,7 @@ void built_echo(t_parser *cmd)
     
     if (newline)
         printf("\n");
+    set_last_exit_status(0);
 }
 
 int built_cd(t_parser *cmd)
@@ -54,22 +55,22 @@ int built_cd(t_parser *cmd)
     char *current_pwd;
     char *old_pwd;
     int arg_count = 0;
+    int exit_code = 0;
     
     // Current PWD'yi al
-    current_pwd = getcwd(NULL, 0);//getcwd null döndürmeyi kontrol et
+    current_pwd = getcwd(NULL, 0);
     old_pwd = current_pwd ? ft_strdup(current_pwd) : NULL;
     
     // boş arg de patlıyordu fix
     while (cmd->argv[arg_count])
         arg_count++;
     
-    // cd + 2 path         geçersiz 
+    // cd + 2 path geçersiz 
     if (arg_count > 2)
     {
         printf("bash: cd: too many arguments\n");
-        if (current_pwd) free(current_pwd);
-        if (old_pwd) gc_free(old_pwd);
-        return 1;
+        exit_code = 1;
+        goto cleanup;
     }
     
     if (cmd->argv[1] == NULL || cmd->argv[1][0] == '\0')
@@ -79,16 +80,14 @@ int built_cd(t_parser *cmd)
         if (home_dir == NULL)
         {
             printf("cd: HOME not set\n");
-            if (current_pwd) free(current_pwd);
-            if (old_pwd) gc_free(old_pwd);
-            return 1;
+            exit_code = 1;
+            goto cleanup;
         }
         if (chdir(home_dir) != 0)
         {
             perror("cd");
-            if (current_pwd) free(current_pwd);
-            if (old_pwd) gc_free(old_pwd);
-            return 1;
+            exit_code = 1;
+            goto cleanup;
         }
     }
     else
@@ -96,9 +95,8 @@ int built_cd(t_parser *cmd)
         if (chdir(cmd->argv[1]) != 0)
         {
             perror("cd");
-            if (current_pwd) free(current_pwd);
-            if (old_pwd) gc_free(old_pwd);
-            return 1;
+            exit_code = 1;
+            goto cleanup;
         }
     }
     
@@ -106,16 +104,18 @@ int built_cd(t_parser *cmd)
     char *new_pwd = getcwd(NULL, 0);
     if (new_pwd)
     {
-        // Bu fonksiyonları execute.c'den çağıramayız, global export list kullanmalıyız
         setenv("PWD", new_pwd, 1);
         if (old_pwd)
             setenv("OLDPWD", old_pwd, 1);
         free(new_pwd);
     }
     
+cleanup:
     if (current_pwd) free(current_pwd);
     if (old_pwd) gc_free(old_pwd);
-    return 0;
+    
+    set_last_exit_status(exit_code);
+    return exit_code;
 }
 #include <errno.h>
 void builtin_pwd(void)
@@ -124,39 +124,45 @@ void builtin_pwd(void)
     
     if (cwd)
     {
-        // printf yerine write kullan
         size_t len = strlen(cwd);
         if (write(STDOUT_FILENO, cwd, len) == -1)
         {
-            //EPIPE hatası sessizce yoksayılır
             if (errno != EPIPE)
                 perror("write");
+            set_last_exit_status(1);
         }
         else
         {
-            // Newline ekle
             if (write(STDOUT_FILENO, "\n", 1) == -1)
             {
                 if (errno != EPIPE)
                     perror("write");
+                set_last_exit_status(1);
+            }
+            else
+            {
+                set_last_exit_status(0);
             }
         }
         free(cwd);
     }
     else
+    {
         perror("pwd");
+        set_last_exit_status(1);
+    }
 }
 
 void builtin_exit(t_parser *cmd)
 {
-    int exit_code;
+    int exit_code = 0;
     int i;
-    exit_code = 0;
     
     if (cmd->argv[1] && cmd->argv[2])
     {
         printf("bash: exit: too many arguments\n");
-        return(exit(2));
+        set_last_exit_status(2);
+        return; // exit yerine return - çok argüman olunca çıkma
     }
     
     if (cmd->argv[1])
@@ -171,14 +177,11 @@ void builtin_exit(t_parser *cmd)
             if (cmd->argv[1][i] < '0' || cmd->argv[1][i] > '9')
             {
                 printf("bash: exit: %s: numeric argument required\n", cmd->argv[1]);
-                  close(cmd->fd_i);
-            close(cmd->fd_o);
-            
-            // Builtin sonrası tüm FD'leri temizle
-            //tt(data);
-            close_all_fds_except_std(cmd);
-            gb_free_all();
-            env_gb_free_all();
+                close(cmd->fd_i);
+                close(cmd->fd_o);
+                close_all_fds_except_std(cmd);
+                gb_free_all();
+                env_gb_free_all();
                 exit(2);
             }
             i++;
@@ -187,20 +190,17 @@ void builtin_exit(t_parser *cmd)
         // Geçerli sayı ise convert et
         exit_code = ft_atoi(cmd->argv[1]);
         // Exit kodu 0-255 arasında olmalı (modulo 256)
-        // Negatif sayılar için doğru modulo işlemi
-        exit_code = ((exit_code % 256) + 256) % 256; // syntax bu şekilde olmasının sebebi işlem önceliği
+        exit_code = ((exit_code % 256) + 256) % 256;
     }
+    
     close(cmd->fd_i);
     close(cmd->fd_o);
-    
-    // Builtin sonrası tüm FD'leri temizle
-    //tt(data);
     close_all_fds_except_std(cmd);
     gb_free_all();
     env_gb_free_all();
-  
     exit(exit_code);
 }
+
 
 void builtin_env(t_env *env_list)
 {
@@ -212,4 +212,5 @@ void builtin_env(t_env *env_list)
             printf("%s=%s\n", current->key, current->value);
         current = current->next;
     }
+    set_last_exit_status(0);
 }

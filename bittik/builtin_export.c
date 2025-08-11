@@ -21,7 +21,6 @@ char *export_build_value(t_parser *cmd, int *i, char *value)
     int j;
     int total_len;
     
-   
     total_len = ft_strlen(value);
     j = *i + 1;
     while (cmd->argv[j] && !ft_strchr(cmd->argv[j], '='))
@@ -91,6 +90,7 @@ void builtin_export(t_parser *cmd, t_env **env_list)
 {
     int i;
     t_export **export_list;
+    int has_error = 0; // Error tracking
     
     i = 1;
     export_list = get_export_list();
@@ -98,6 +98,7 @@ void builtin_export(t_parser *cmd, t_env **env_list)
     if (!cmd->argv[1])
     {
         export_print_all(export_list);
+        set_last_exit_status(0);
         return;
     }
     
@@ -120,6 +121,7 @@ void builtin_export(t_parser *cmd, t_env **env_list)
         if (identifier[0] == '$')
         {
             printf("bash: export: `%s': not a valid identifier\n", identifier);
+            has_error = 1;
             if (eq_pos) *eq_pos = '=';
         }
         else if (!((identifier[0] >= 'a' && identifier[0] <= 'z') || 
@@ -127,6 +129,7 @@ void builtin_export(t_parser *cmd, t_env **env_list)
               identifier[0] == '_'))
         {
             printf("bash: export: `%s': not a valid identifier\n", identifier);
+            has_error = 1;
             if (eq_pos) *eq_pos = '='; 
         }
         else
@@ -140,6 +143,9 @@ void builtin_export(t_parser *cmd, t_env **env_list)
         }
         i++;
     }
+    
+    // Export exit status: 0 = success, 1 = error
+    set_last_exit_status(has_error ? 1 : 0);
 }
 
 // değişkeni hem env hem export listesinden kaldır abi
@@ -147,6 +153,7 @@ void builtin_unset(t_parser *cmd, t_env **env_list)
 {
     int i;
     t_export **export_list;
+    int has_error = 0;
     
     i = 1;
     export_list = get_export_list();
@@ -154,13 +161,29 @@ void builtin_unset(t_parser *cmd, t_env **env_list)
     if (!cmd->argv[1])
     {
         printf("unset: not enough arguments\n");
+        set_last_exit_status(1);
         return;
     }
     
     while (cmd->argv[i])
     {
-        unset_env_value(env_list, cmd->argv[i]);
-        unset_export_value(export_list, cmd->argv[i]);
+        char *identifier = cmd->argv[i];
+        
+        // Identifier validation
+        if (identifier[0] == '$' || 
+            !((identifier[0] >= 'a' && identifier[0] <= 'z') || 
+              (identifier[0] >= 'A' && identifier[0] <= 'Z') || 
+              identifier[0] == '_'))
+        {
+            printf("bash: unset: `%s': not a valid identifier\n", identifier);
+            has_error = 1;
+        }
+        else
+        {
+            unset_env_value(env_list, cmd->argv[i]);
+            unset_export_value(export_list, cmd->argv[i]);
+        }
         i++;
     }
+    set_last_exit_status(has_error ? 1 : 0);
 }

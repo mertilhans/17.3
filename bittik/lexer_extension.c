@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   lexer_extension.c                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: husarpka <husarpka@student.42.fr>          +#+  +:+       +#+        */
+/*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 03:36:06 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/10 11:20:45 by husarpka         ###   ########.fr       */
+/*   Updated: 2025/08/11 04:58:37 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,27 +85,29 @@ void ft_token_data_init(t_token_data *data)
 
 char *extract_complex_word(t_tokenizer *tokenizer)
 {
-	
-	t_token_data data;
-	ft_token_data_init(&data);    
+    t_token_data data;
+    ft_token_data_init(&data);    
     data.word = gb_malloc(data.capacity);
     if (!data.word)
-        return (NULL);
+        return NULL;
     data.word[0] = '\0';
+    
     if (ft_ispace(tokenizer->current))
-        return (data.word);
+        return data.word;
     
     while (tokenizer->current && 
            (data.in_quote || (!ft_ispace(tokenizer->current) && !is_special_char(tokenizer->current))))
     {
         data.word = process_character(tokenizer, &data);
         if (!data.word)
-            return (NULL);
+            return NULL;
     }
-	if (data.in_quote != '\0')
-	{
-		printf("quote error\n");
-		return (NULL);
-	}
-    return (data.word);
+    
+    if (data.in_quote != '\0')
+    {
+        printf("quote error\n");
+        set_last_exit_status(2); // Quote error
+        return NULL;
+    }
+    return data.word;
 }

@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 00:23:50 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 04:33:46 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 05:04:14 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,7 @@ char **split_expanded_string(char *str)
     return (result);
 }
 
-char *expand_variables(char *str, t_env *env_list, int exit_status)
+char *expand_variables(char *str, t_env *env_list)
 {
     char *res;
     char *expanded;
@@ -81,14 +81,14 @@ char *expand_variables(char *str, t_env *env_list, int exit_status)
     int str_len;
 
     if (!str)
-        return (NULL);
+        return NULL;
     
     str_len = ft_strlen(str);
     res_cap = str_len + 1;
     
     res = gb_malloc(res_cap);
     if (!res)
-        return (NULL);
+        return NULL;
     
     res[0] = '\0';
     res_len = 0;
@@ -98,7 +98,7 @@ char *expand_variables(char *str, t_env *env_list, int exit_status)
     {
         if (str[i] == '$')
         {
-            expanded = handle_dollar(str, &i, env_list, exit_status);
+            expanded = handle_dollar(str, &i, env_list);
             if (expanded)
             {
                 add_len = ft_strlen(expanded);
@@ -110,7 +110,7 @@ char *expand_variables(char *str, t_env *env_list, int exit_status)
                     {
                         gc_free(res);
                         gc_free(expanded);
-                        return (NULL);
+                        return NULL;
                     }
                     ft_memcpy(new_res, res, res_len);
                     gc_free(res);
@@ -131,7 +131,7 @@ char *expand_variables(char *str, t_env *env_list, int exit_status)
                 if (!new_res)
                 {
                     gc_free(res);
-                    return (NULL);
+                    return NULL;
                 }
                 ft_memcpy(new_res, res, res_len);
                 gc_free(res);
@@ -143,10 +143,10 @@ char *expand_variables(char *str, t_env *env_list, int exit_status)
             i++;
         }
     }
-    return (res);
+    return res;
 }
 
-char *handle_dollar(char *str, int *i, t_env *env_list, int exit_status)
+char *handle_dollar(char *str, int *i, t_env *env_list)
 {
     char *var_name;
     char *expanded;
@@ -157,18 +157,18 @@ char *handle_dollar(char *str, int *i, t_env *env_list, int exit_status)
 
     (*i)++;
     if (!str[*i])
-        return (ft_strdup("$"));
+        return ft_strdup("$");
     
     if (str[*i] == '?')
     {
         (*i)++;
-        return (ft_itoa(exit_status));
+        return ft_itoa(get_last_exit_status()); // Getter kullan
     }
     
     if (str[*i] == '$')
     {
         (*i)++;
-        return (ft_itoa(getpid()));
+        return ft_itoa(getpid());
     }
     
     if (isalpha(str[*i]) || str[*i] == '_')
@@ -179,11 +179,11 @@ char *handle_dollar(char *str, int *i, t_env *env_list, int exit_status)
         
         len = *i - start_i;
         if (len <= 0)
-            return (ft_strdup(""));
+            return ft_strdup("");
             
         var_name = gb_malloc(len + 1);
         if (!var_name)
-            return (ft_strdup(""));
+            return ft_strdup("");
             
         ft_memcpy(var_name, str + start_i, len);
         var_name[len] = '\0';
@@ -194,7 +194,7 @@ char *handle_dollar(char *str, int *i, t_env *env_list, int exit_status)
         {
             expanded = ft_strdup(env_node->value);
             gc_free(var_name);
-            return (expanded ? expanded : ft_strdup(""));
+            return expanded ? expanded : ft_strdup("");
         }
         
         // Sonra export'tan ara
@@ -203,16 +203,16 @@ char *handle_dollar(char *str, int *i, t_env *env_list, int exit_status)
         {
             expanded = ft_strdup(export_value);
             gc_free(var_name);
-            return (expanded ? expanded : ft_strdup(""));
+            return expanded ? expanded : ft_strdup("");
         }
         
         // Bulunamadı, boş string döndür
         gc_free(var_name);
-        return (ft_strdup(""));
+        return ft_strdup("");
     }
     
     // Geçersiz karakter sonrası $, sadece $ döndür
-    return (ft_strdup("$"));
+    return ft_strdup("$");
 }
 
 char *handle_simple(const char *str, int *i, t_env *env_list)
@@ -312,7 +312,7 @@ static char *append_string_res(char *result, char *str, int *res_len, int *res_c
     return (result);
 }
 
-char *expand_with_quotes(char *str, t_env *env_list, int exit_status)
+char *expand_with_quotes(char *str, t_env *env_list)
 {
     int str_len;
     int res_len;
@@ -323,14 +323,14 @@ char *expand_with_quotes(char *str, t_env *env_list, int exit_status)
     char *expanded;
 
     if (!str)
-        return (NULL);
+        return NULL;
     
     str_len = ft_strlen(str);
     res_cap = str_len + 1;
     
     result = gb_malloc(res_cap);
     if (!result)
-        return (NULL);
+        return NULL;
     
     result[0] = '\0';
     res_len = 0;
@@ -359,7 +359,7 @@ char *expand_with_quotes(char *str, t_env *env_list, int exit_status)
         }
         else if (str[i] == '$' && quote_char != '\'')
         {
-            expanded = handle_dollar(str, &i, env_list, exit_status);
+            expanded = handle_dollar(str, &i, env_list);
             if (expanded)
             {
                 result = append_string_res(result, expanded, &res_len, &res_cap);
@@ -373,10 +373,10 @@ char *expand_with_quotes(char *str, t_env *env_list, int exit_status)
         }
     }
     
-    return (result);
+    return result;
 }
 
-char *expand_heredoc_line(char *str, t_env *env_list, int exit_status)
+char *expand_heredoc_line(char *str, t_env *env_list)
 {
     int len;
     int res_len;
@@ -387,14 +387,14 @@ char *expand_heredoc_line(char *str, t_env *env_list, int exit_status)
     char *expanded;
 
     if (!str)
-        return (NULL);
+        return NULL;
     
     len = ft_strlen(str);
     res_cap = len + 1;
     
     result = gb_malloc(res_cap);
     if (!result)
-        return (NULL);
+        return NULL;
     
     result[0] = '\0';
     res_len = 0;
@@ -414,7 +414,7 @@ char *expand_heredoc_line(char *str, t_env *env_list, int exit_status)
         }
         else if (str[i] == '$')
         {
-            expanded = handle_dollar(str, &i, env_list, exit_status);
+            expanded = handle_dollar(str, &i, env_list);
             if (expanded)
             {
                 result = append_string_res(result, expanded, &res_len, &res_cap);
@@ -427,5 +427,5 @@ char *expand_heredoc_line(char *str, t_env *env_list, int exit_status)
             i++;
         }
     }
-    return (result);
+    return result;
 }

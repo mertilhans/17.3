@@ -203,11 +203,11 @@ int redir_in(t_redirection *redir)
     if (fd < 0)
     {
         perror(redir->filename);
-        return (-1);
+        return 1; /// -1 birşey deniyorum bozulursa bakcam
     }
     dup2(fd, STDIN_FILENO);
     close(fd);
-    return (0);
+    return 0; // Success
 }
 
 int redir_out(t_redirection *redir)
@@ -218,7 +218,7 @@ int redir_out(t_redirection *redir)
     if (fd < 0)
     {
         perror(redir->filename);
-        return (-1);
+        return (1); // birşey daha deniyom
     }
     dup2(fd, STDOUT_FILENO);
     close(fd);
@@ -233,7 +233,7 @@ int redir_append(t_redirection *redir)
     if (fd < 0)
     {
         perror(redir->filename);
-        return (-1);
+        return (1); // buda -1 birşey deniyorum 
     }
     dup2(fd, STDOUT_FILENO);
     close(fd);
@@ -343,27 +343,27 @@ int heredoc_append_line(t_heredoc_buffer *buf)
     return (1);
 }
 
-char *expand_heredoc_line_impl(char *line, t_env *env_list, int exit_status)
+char *expand_heredoc_line_impl(char *line, t_env *env_list)
 {
     char *expanded;
 
     if (!line)
         return NULL;
-    expanded = expand_heredoc_line(line, env_list, exit_status);
+    expanded = expand_heredoc_line(line, env_list);
     if (expanded)
         return expanded;
     else
         return ft_strdup(line);
 }
 
-int heredoc_append_expanded(t_heredoc_buffer *buf, t_env *env_list, int exit_status)
+int heredoc_append_expanded(t_heredoc_buffer *buf, t_env *env_list)
 {
     char *expanded_line;
     char *old_line;
     int result;
 
     old_line = buf->line;
-    expanded_line = expand_heredoc_line_impl(buf->line, env_list, exit_status);
+    expanded_line = expand_heredoc_line_impl(buf->line, env_list);
     buf->line = expanded_line;
     result = heredoc_append_line(buf);
     buf->line = old_line;
@@ -410,7 +410,7 @@ char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
 }
 
 
-char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter,t_env *env_list, int exit_status)
+char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter, t_env *env_list)
 {
     heredoc_signals();
     while (1)
@@ -420,7 +420,7 @@ char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter,t_env *e
         {
             set_last_exit_status(130);
             setup_interactive_signals();
-            return (NULL);
+            return NULL;
         }
         if ((size_t)ft_strlen(buf->line) == buf->delimiter_len &&
             ft_strcmp(buf->line, delimiter) == 0)
@@ -428,7 +428,7 @@ char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter,t_env *e
             gc_free(buf->line);
             break;
         }
-        if (!heredoc_append_expanded(buf, env_list, exit_status))
+        if (!heredoc_append_expanded(buf, env_list))
         {
             not_her_app_exp(buf);
             return NULL;
@@ -439,6 +439,7 @@ char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter,t_env *e
     setup_interactive_signals();
     return buf->content;
 }
+
 
 char *read_single_heredoc_block(char *delimiter)
 {
@@ -467,7 +468,7 @@ char *read_single_heredoc_block(char *delimiter)
         return buf.content;
 }
 
-char *read_heredoc_with_expand(char *delimiter, t_env *env_list, int exit_status)
+char *read_heredoc_with_expand(char *delimiter, t_env *env_list)
 {
     t_heredoc_buffer buf;
     char *result;
@@ -475,6 +476,7 @@ char *read_heredoc_with_expand(char *delimiter, t_env *env_list, int exit_status
     if (!delimiter || *delimiter == '\0')
     {
         printf("delimiter error\n");
+        set_last_exit_status(1);
         return NULL;
     }
     buf.content = ft_strdup("");
@@ -485,29 +487,35 @@ char *read_heredoc_with_expand(char *delimiter, t_env *env_list, int exit_status
     if (!buf.content)
     {
         perror("Heredoc malloc error\n");
+        set_last_exit_status(1);
         return NULL;
     }
-    result = readline_loop_expand(&buf, delimiter, env_list, exit_status);
+    result = readline_loop_expand(&buf, delimiter, env_list);
     if (result)
         return result;
     else
-        return(NULL);
+        return NULL;
 }
 
-int ft_h_built_expand(t_redirection *current_redir,t_heredoc_data *data,t_env *env_list, int exit_status)
+int ft_h_built_expand(t_redirection *current_redir, t_heredoc_data *data, t_env *env_list)
 {
     int pipefd[2];
     if (current_redir->no_expand)
         data->heredoc_content = read_single_heredoc_block(current_redir->filename);
     else
-        data->heredoc_content = read_heredoc_with_expand(current_redir->filename, env_list, exit_status);
+        data->heredoc_content = read_heredoc_with_expand(current_redir->filename, env_list);
+    
     if (!data->heredoc_content)
-        return (-1);
+    {
+        set_last_exit_status(130); // Heredoc interrupted
+        return -1;
+    }
     data->heredoc_len = ft_strlen(data->heredoc_content);
     if (pipe(pipefd) == -1)
     {
         perror("heredoc pipe");
         gc_free(data->heredoc_content);
+        set_last_exit_status(1);
         return -1;
     }
     write(pipefd[1], data->heredoc_content, data->heredoc_len);
@@ -517,7 +525,7 @@ int ft_h_built_expand(t_redirection *current_redir,t_heredoc_data *data,t_env *e
     return pipefd[0];
 }
 
-int h_loop(t_parser *cmd,t_heredoc_data *data, t_env *env_list, int exit_status)
+int h_loop(t_parser *cmd, t_heredoc_data *data, t_env *env_list)
 {
     t_redirection *current_redir;
 
@@ -531,24 +539,24 @@ int h_loop(t_parser *cmd,t_heredoc_data *data, t_env *env_list, int exit_status)
                 close(data->last_heredoc_fd);
                 data->last_heredoc_fd = -1;
             }
-            if(ft_h_built_expand(current_redir,data, env_list, exit_status) == -1)
-                return (-1);
+            if(ft_h_built_expand(current_redir, data, env_list) == -1)
+                return -1;
         }
         current_redir = current_redir->next;
     }
-    return (0);
+    return 0;
 }
 
-int process_heredocs(t_parser *cmd, t_env *env_list, int exit_status)
+int process_heredocs(t_parser *cmd, t_env *env_list)
 {
     t_heredoc_data h_data;
   
     h_data.heredoc_content = NULL;
     h_data.heredoc_len = 0;
     h_data.last_heredoc_fd = -2;
-    if(h_loop(cmd,&h_data, env_list, exit_status) == -1)
-        return (-1);
-    return (h_data.last_heredoc_fd);
+    if(h_loop(cmd, &h_data, env_list) == -1)
+        return -1;
+    return h_data.last_heredoc_fd;
 }
 
 int setup_file_redirections(t_parser *cmd)
@@ -577,48 +585,46 @@ int setup_file_redirections(t_parser *cmd)
     }
     return (0);
 }
-int ft_builtin_call_3(t_parser *cmd , t_env **env_list)
+int ft_builtin_call_3(t_parser *cmd, t_env **env_list)
 {
-
     if (ft_strcmp(cmd->argv[0], "env") == 0)
     {
         if(cmd->argv[1])
         {
-            ft_putendl_fd(" : No such file or directory\n",2);
-            return(1);
+            ft_putendl_fd(" : No such file or directory\n", 2);
             set_last_exit_status(127);
+            return 127; // 1 yerine 127
         }
         builtin_env(*env_list);
-        set_last_exit_status(0);
-        return (0);
+        // env built_in içinde set_last_exit_status(0) yapıyor
+        return 0;
     }
-    return (1);
+    return -1; // builtin değil
 }
 
 
-int ft_builtin_call_2(t_parser *cmd,t_env **env_list)
+int ft_builtin_call_2(t_parser *cmd, t_env **env_list)
 {
     if (ft_strcmp(cmd->argv[0], "export") == 0)
     {
         builtin_export(cmd, env_list);
-        set_last_exit_status(0);
-        return (0);
+        return get_last_exit_status(); // builtin içinde set ediliyor
     }
     if (ft_strcmp(cmd->argv[0], "pwd") == 0)
     {
         builtin_pwd();
-        set_last_exit_status(0);
-        return (0);
+        return get_last_exit_status(); // builtin içinde set ediliyor
     }
     if (ft_strcmp(cmd->argv[0], "unset") == 0)
     {
         builtin_unset(cmd, env_list);
-        set_last_exit_status(0);
-        return (0);
+        return get_last_exit_status(); // builtin içinde set ediliyor
     }
-    if (!ft_builtin_call_3(cmd,env_list))
-        return (0);
-    return (1);
+    
+    int result = ft_builtin_call_3(cmd, env_list);
+    if (result != -1)
+        return result;
+    return -1; // builtin değil
 }
 void close_fd(t_exec_data *data)
 {
@@ -629,31 +635,30 @@ void close_fd(t_exec_data *data)
         close(data->original_stdout);
 }
 
-int	ft_builtin_call(t_parser *cmd, t_exec_data *data, t_env **env_list)
+int ft_builtin_call(t_parser *cmd, t_exec_data *data, t_env **env_list)
 {
-
-	if (ft_strcmp(cmd->argv[0], "echo") == 0)
-	{
-		built_echo(cmd);
-		set_last_exit_status(0);
-		return (0);
-	}
+    if (ft_strcmp(cmd->argv[0], "echo") == 0)
+    {
+        built_echo(cmd);
+        return get_last_exit_status(); // builtin içinde set ediliyor
+    }
     if (ft_strcmp(cmd->argv[0], "cd") == 0)
     {
-        built_cd(cmd);
-        set_last_exit_status(0);
-        return (0);
+        int result = built_cd(cmd);
+        return result; // cd kendi exit status'ını döndürüyor
     }
-	if (ft_strcmp(cmd->argv[0], "exit") == 0)
-	{
-		cmd->fd_i = data->original_stdin;
-		cmd->fd_o = data->original_stdout;
-		builtin_exit(cmd);
-		return (0);
-	}
-	if (!ft_builtin_call_2(cmd, env_list))
-		return (0);
-	return 1;
+    if (ft_strcmp(cmd->argv[0], "exit") == 0)
+    {
+        cmd->fd_i = data->original_stdin;
+        cmd->fd_o = data->original_stdout;
+        builtin_exit(cmd);
+        return 0; // exit çağrısı bu noktaya ulaşmaz
+    }
+    
+    int result = ft_builtin_call_2(cmd, env_list);
+    if (result != -1)
+        return result;
+    return -1; // builtin değil
 }
 
 
@@ -728,35 +733,47 @@ int ft_redir_ctrl(t_parser *cmd)
         if (redir->type == REDIR_IN)
         {
             if (redir_in(redir) != 0)
+            {
+                set_last_exit_status(1);
                 return (-1);
+            }
         }
         else if (redir->type == REDIR_OUT || redir->type == REDIR_APPEND)
         {
             if (ft_redir_in_or_out(redir))
+            {
+                set_last_exit_status(1);
                 return (-1);
+            }
         }
         else if (redir->type == REDIR_HEREDOC)
         {
             if(ft_heredoc(cmd))
+            {
+                set_last_exit_status(1);
                 return (-1);
+            }
         }
         redir = redir->next;
     }
+    
     if (ft_heredoc(cmd))
+    {
+        set_last_exit_status(1);
         return (-1);
+    }
     return (0);
 }
-void ft_directory(t_parser *cmd,t_exec_data *data)
+void ft_directory(t_parser *cmd, t_exec_data *data)
 {
-   
-    ft_putendl_fd("bash :",2);
-    ft_putendl_fd(cmd->argv[0],2);
-    ft_putendl_fd("is a directory\n",2);
+    ft_putendl_fd("bash :", 2);
+    ft_putendl_fd(cmd->argv[0], 2);
+    ft_putendl_fd("is a directory\n", 2);
     close_fd(data);
     close_all_fds_except_std(cmd);
     gb_free_all();
     env_gb_free_all();
-    exit(126);
+    exit(126); // Is a directory error
 }
 void ft_not_directory(t_parser *cmd,t_exec_data *data)
 {
@@ -771,36 +788,38 @@ void ft_not_directory(t_parser *cmd,t_exec_data *data)
 
 }
 
-void ft_not_executable(t_parser *cmd, t_exec_data *data,char *exec_path)
+void ft_not_executable(t_parser *cmd, t_exec_data *data, char *exec_path)
 {
-
+    int exit_code;
+    
     if (exec_path && access(exec_path, F_OK) == 0)
     {
-        ft_putendl_fd("bash :",2);
-        ft_putendl_fd(cmd->argv[0],2);
-        ft_putendl_fd("Permission denied\n",2);
+        ft_putendl_fd("bash :", 2);
+        ft_putendl_fd(cmd->argv[0], 2);
+        ft_putendl_fd("Permission denied\n", 2);
+        exit_code = 126; // Permission denied
     }
     else
     {
-        ft_putendl_fd(cmd->argv[0],2);
-        ft_putendl_fd(": command not found\n",2);
+        ft_putendl_fd(cmd->argv[0], 2);
+        ft_putendl_fd(": command not found\n", 2);
+        exit_code = 127; // Command not found
     }
     
     close_fd(data);
     close_all_fds_except_std(cmd);
     gb_free_all();
     env_gb_free_all();
-    exit(127);
+    exit(exit_code);
 }
-void ft_is_builtin(t_parser *cmd,t_exec_data *data, t_env **env_list)
+void ft_is_builtin(t_parser *cmd, t_exec_data *data, t_env **env_list)
 {
-    ft_builtin_call(cmd, data, env_list);
+    int exit_code = ft_builtin_call(cmd, data, env_list);
     close_fd(data);
     close_all_fds_except_std(cmd);
     gb_free_all();
     env_gb_free_all();
-    exit(get_last_exit_status());
-
+    exit(exit_code); 
 }
 void ft_exec_start(t_parser *cmd, t_exec_data *data, t_env **env_list)
 {
@@ -930,33 +949,6 @@ int setup_and_fork(t_parser *cmd, t_exec_data *data, t_env **env_list)
     return (pid);
 }
 
-int process_command(t_parser *cmd, t_exec_data *data, t_env **env_list)
-{
-    data->pipefd[0] = -1;
-    data->pipefd[1] = -1;
-    if (setup_and_fork(cmd, data, env_list) == -1)
-        return 0;
-    if (cmd->heredoc_fd != -1 && cmd->heredoc_fd != -2)
-    {
-        close(cmd->heredoc_fd);
-        cmd->heredoc_fd = -1;
-    }
-    if (data->in_fd != STDIN_FILENO)
-        close(data->in_fd);   
-    if (cmd->next)
-    {
-        if (data->pipefd[0] != -1)
-        {
-            close(data->pipefd[1]);
-            data->in_fd = data->pipefd[0];
-        }
-        else
-            data->in_fd = STDIN_FILENO;
-    }
-    else
-        data->in_fd = STDIN_FILENO;
-    return 1;
-}
 
 void execute_loop(t_parser *cmd_list, t_exec_data *data, t_env **env_list)
 {
@@ -1010,23 +1002,23 @@ int heredoc_fd_error(t_parser *cmd_list,t_exec_data *data,t_parser *current_cmd)
     return (1);
 }
 
-int heredoc_handle(t_parser *cmd_list,t_exec_data *data, t_env *env_list)
+int heredoc_handle(t_parser *cmd_list, t_exec_data *data, t_env *env_list)
 {
     t_parser *current_cmd;
 
     current_cmd = cmd_list;
     while (current_cmd)
     {
-        current_cmd->heredoc_fd = process_heredocs(current_cmd, env_list, get_last_exit_status());
+        current_cmd->heredoc_fd = process_heredocs(current_cmd, env_list);
         if (current_cmd->heredoc_fd == -1)
         {
             set_last_exit_status(130);
-            heredoc_fd_error(cmd_list,data,current_cmd);
-            return (1);
+            heredoc_fd_error(cmd_list, data, current_cmd);
+            return 1;
         }
         current_cmd = current_cmd->next;
     }
-    return (0);
+    return 0;
 }
 
 int n_next_or_built(t_parser *cmd_list, t_exec_data *data, t_env **env_list)
@@ -1036,12 +1028,13 @@ int n_next_or_built(t_parser *cmd_list, t_exec_data *data, t_env **env_list)
         if (dup2(cmd_list->heredoc_fd, STDIN_FILENO) == -1)
         {
             perror("dup2 heredoc for builtin");
-            data->return_status = 1;
+            set_last_exit_status(1);
         }
         close(cmd_list->heredoc_fd);
         cmd_list->heredoc_fd = -1;
     }
-    if (data->return_status == 0)
+    
+    if (get_last_exit_status() == 0) 
     {
         if (setup_file_redirections(cmd_list) != 0)
             set_last_exit_status(1);
@@ -1052,7 +1045,7 @@ int n_next_or_built(t_parser *cmd_list, t_exec_data *data, t_env **env_list)
     close(data->original_stdin);
     dup2(data->original_stdout, STDOUT_FILENO);
     close(data->original_stdout);
-    return (get_last_exit_status());
+    return get_last_exit_status();
 }
 
 void exe_loop(t_parser *cmd_list,t_exec_data *data,t_env **env_list)
@@ -1110,9 +1103,8 @@ void finish_fd(t_parser *cmd_list,t_exec_data *data)
     close(data->original_stdout);
 }
 
-int data_init(t_exec_data *data, t_parser *cmd_list,char **env ,int *pid_len)
+int data_init(t_exec_data *data, t_parser *cmd_list, char **env, int *pid_len)
 {
-    data->return_status = 0;
     data->original_stdin = dup(STDIN_FILENO);
     data->original_stdout = dup(STDOUT_FILENO);
     *pid_len = count_commands(cmd_list);
@@ -1125,6 +1117,7 @@ int data_init(t_exec_data *data, t_parser *cmd_list,char **env ,int *pid_len)
     data->in_fd = STDIN_FILENO;
     data->pipefd[0] = -1;
     data->pipefd[1] = -1;
+    
     if (data->original_stdin == -1 || data->original_stdout == -1)
     {
         perror("dup failed");
@@ -1132,9 +1125,9 @@ int data_init(t_exec_data *data, t_parser *cmd_list,char **env ,int *pid_len)
             close(data->original_stdin);
         if (data->original_stdout != -1) 
             close(data->original_stdout);
-        return (1);
+        return 1;
     }
-    return (0);
+    return 0;
 }
 int heredoc_handle_init(t_parser *cmd_list)
 {
@@ -1178,4 +1171,31 @@ int execute_cmds(t_parser *cmd_list, char **env, t_env **env_list)
     setup_interactive_signals();
     finish_fd(cmd_list, &data);
     return (get_last_exit_status());
+}
+int process_command(t_parser *cmd, t_exec_data *data, t_env **env_list)
+{
+    data->pipefd[0] = -1;
+    data->pipefd[1] = -1;
+    if (setup_and_fork(cmd, data, env_list) == -1)
+        return 0;
+    if (cmd->heredoc_fd != -1 && cmd->heredoc_fd != -2)
+    {
+        close(cmd->heredoc_fd);
+        cmd->heredoc_fd = -1;
+    }
+    if (data->in_fd != STDIN_FILENO)
+        close(data->in_fd);   
+    if (cmd->next)
+    {
+        if (data->pipefd[0] != -1)
+        {
+            close(data->pipefd[1]);
+            data->in_fd = data->pipefd[0];
+        }
+        else
+            data->in_fd = STDIN_FILENO;
+    }
+    else
+        data->in_fd = STDIN_FILENO;
+    return 1;
 }

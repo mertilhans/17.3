@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   lexer.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: husarpka <husarpka@student.42.fr>          +#+  +:+       +#+        */
+/*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 03:35:51 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/10 16:48:18 by husarpka         ###   ########.fr       */
+/*   Updated: 2025/08/11 04:58:24 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,6 +122,7 @@ int ft_tokenize_control(char *input)
             if (only_spaces_before(input, current))
             {
                 printf("bash: syntax error near unexpected token `|'\n");
+                set_last_exit_status(2);
                 return 1;
             }
             temp = current + 1;
@@ -130,13 +131,15 @@ int ft_tokenize_control(char *input)
             if (*temp == '\0')
             {
                 printf("bash: syntax error near unexpected token `|'\n");
+                set_last_exit_status(2);
                 return 1;
             }
         }
         current++;
     }
-    return(0);
+    return 0;
 }
+
 
 t_token *tokenize_input(char *input)
 {

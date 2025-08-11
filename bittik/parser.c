@@ -85,12 +85,13 @@ void add_redirection_with_expansion(t_parser *cmd, t_redir_type type, char *file
         ft_temp_next(new_redir,cmd);
 }
 
+
 void ft_redir_in(t_token *tokens, t_parser *cmd, t_all *all)
 {
     tokens = tokens->next;
     if (tokens && tokens->type == TOKEN_WORD)
     {
-        char *expanded = expand_with_quotes(tokens->value,all->env_list,all->exit_status);
+        char *expanded = expand_with_quotes(tokens->value, all->env_list); // exit_status parametresini kaldır
         if (expanded)
             add_redirection(cmd, REDIR_IN, expanded);
         else
@@ -99,7 +100,10 @@ void ft_redir_in(t_token *tokens, t_parser *cmd, t_all *all)
             gc_free(expanded);
     }
     else
+    {
         cmd->parse_error = 1;
+        set_last_exit_status(2);
+    }
 }
 
 void ft_redir_out(t_token *tokens, t_parser *cmd, t_all *all)
@@ -107,7 +111,7 @@ void ft_redir_out(t_token *tokens, t_parser *cmd, t_all *all)
     tokens = tokens->next;
     if (tokens && tokens->type == TOKEN_WORD)
     {
-        char *expanded = expand_with_quotes(tokens->value,all->env_list,all->exit_status);
+        char *expanded = expand_with_quotes(tokens->value, all->env_list); // exit_status parametresini kaldır
         if (expanded)
             add_redirection(cmd, REDIR_OUT, expanded);
         else
@@ -116,7 +120,10 @@ void ft_redir_out(t_token *tokens, t_parser *cmd, t_all *all)
             gc_free(expanded);
     }
     else
+    {
         cmd->parse_error = 1;
+        set_last_exit_status(2);
+    }
 }
 
 void ft_redir_append(t_token *tokens, t_parser *cmd, t_all *all)
@@ -124,7 +131,7 @@ void ft_redir_append(t_token *tokens, t_parser *cmd, t_all *all)
     tokens = tokens->next;
     if (tokens && tokens->type == TOKEN_WORD)
     {
-        char *expanded = expand_with_quotes(tokens->value,all->env_list,all->exit_status);
+        char *expanded = expand_with_quotes(tokens->value, all->env_list); // exit_status parametresini kaldır
         if (expanded)
             add_redirection(cmd, REDIR_APPEND, expanded);
         else
@@ -133,7 +140,10 @@ void ft_redir_append(t_token *tokens, t_parser *cmd, t_all *all)
             gc_free(expanded);
     }
     else
+    {
         cmd->parse_error = 1;
+        set_last_exit_status(2);
+    }
 }
 
 void ft_redir_heredoc(t_token *tokens, t_parser *cmd)
@@ -146,7 +156,6 @@ void ft_redir_heredoc(t_token *tokens, t_parser *cmd)
     {
         delimiter = tokens->value;
         
-        
         if ((delimiter[0] == '"' && delimiter[ft_strlen(delimiter) - 1] == '"') ||
             (delimiter[0] == '\'' && delimiter[ft_strlen(delimiter) - 1] == '\''))
         {
@@ -158,7 +167,10 @@ void ft_redir_heredoc(t_token *tokens, t_parser *cmd)
             add_redirection_with_expansion(cmd, REDIR_HEREDOC, delimiter, 0);
     }
     else
+    {
         cmd->parse_error = 1;
+        set_last_exit_status(2); // Syntax error
+    }
 }
 
 
@@ -198,7 +210,7 @@ void ft_loop_3(t_token **tokens, t_parser *cmd, int *argc, t_all *all)
         }
 
         original_token = (*tokens)->value;
-        expanded = expand_with_quotes(original_token, all->env_list, all->exit_status);
+        expanded = expand_with_quotes(original_token, all->env_list); // exit_status parametresini kaldır
         is_unquoted_empty_expansion = 0;
 
         // Boş genişletme kontrolü
@@ -317,10 +329,14 @@ void ft_loop_2(t_token **tokens, t_parser *cmd,int *argc,t_all *all)
 
 }
 
-void ft_loop(t_token **tokens, t_parser *cmd, int *argc,t_all *all)
+void ft_loop(t_token **tokens, t_parser *cmd, int *argc, t_all *all)
 {
     if (cmd->parse_error)
-        printf("bash: syntax error near unexpected token `<'\n"); 
+    {
+        printf("bash: syntax error near unexpected token `newline'\n");
+        set_last_exit_status(2);
+        return;
+    }
 
     if ((*tokens)->type == TOKEN_REDIR_IN)
     {
@@ -335,7 +351,8 @@ void ft_loop(t_token **tokens, t_parser *cmd, int *argc,t_all *all)
             *tokens = (*tokens)->next;
     }
     else
-        ft_loop_2(tokens,cmd,argc, all);
+        ft_loop_2(tokens, cmd, argc, all);
+    
     *tokens = (*tokens)->next;
 }
 
@@ -393,88 +410,31 @@ t_parser *parse_tokens(t_token *tokens, t_env *env_list)
     
     cmd = gb_malloc(sizeof(t_parser));
     all = gb_malloc(sizeof(t_all));
-    all = ft_all_init(all,env_list);
+    all = ft_all_init(all, env_list);
+    
     if (token_ctrl(tokens) && !tokens->next)
     {
         printf("bash: syntax error near unexpected token `newline'\n");
-        return (NULL);
+        set_last_exit_status(2);
+        return NULL;
     }
     while (tokens && tokens->type != TOKEN_EOF)
     {
         while (tokens && tokens->type == TOKEN_PIPE)
         {
             printf("bash: syntax error near unexpected token `|'\n");
+            set_last_exit_status(2);
             tokens = tokens->next;
         }
         if (!tokens || tokens->type == TOKEN_EOF)
             break;
-
-        tokens = ft_control_token(tokens, all);
+        tokens = ft_control_token(tokens, all);  
+        if (all->cmd_list && all->cmd_list->parse_error)
+        {
+            set_last_exit_status(2);
+            return NULL;
+        }
     }
     cmd = all->cmd_list;
-    return (cmd);
+    return cmd;
 }
-
-
-//int ft_pipe_control(t_token *tokens)
-//{
-//    t_token *cmd;
-//    cmd = tokens;
-//    while (cmd && cmd->next)
-//    {
-//        if (cmd->next->type == TOKEN_EOF )
-//        {
-//            if (!cmd->value)
-//                return (1);
-//        }
-//        if (cmd->type == TOKEN_PIPE)
-//        {
-//            if (!cmd->next)
-//                return (1);
-//        }
-        
-//        cmd = cmd->next;
-//    }
-//    return (0);
-//}
-
-//t_parser *parse_tokens(t_token *tokens, t_env *env_list, int exit_status)
-//{
-//    t_parser *cmd_list;
-//    t_parser *last_cmd;
-
-//    cmd_list = NULL;
-//    last_cmd = NULL;
-
-//    //if(ft_pipe_control(tokens))
-//    //{
-//    //    printf("hata\n");
-//    //    return (NULL);
-//    //}
-//    if (token_ctrl(tokens) && !tokens->next)
-//    {
-         
-//        printf("bash: syntax error near unexpected token `newline'\n");
-//        return (NULL);
-
-//    }
-    
-//    //if (tokens->type == TOKEN_PIPE && !tokens->next)
-//    //{
-//    //   printf("bash: syntax error near unexpected token `|'\n");
-//    //    return (NULL);
-
-//    //}
-//    while (tokens && tokens->type != TOKEN_EOF )
-//    {
-//        while (tokens && tokens->type == TOKEN_PIPE)
-//        {
-//            printf("bash: syntax error near unexpected token `|'\n");
-//            tokens = tokens->next;
-//        }
-//        if (!tokens || tokens->type == TOKEN_EOF)
-//            break;
-//        tokens = ft_control_token(tokens, &cmd_list, &last_cmd, env_list, exit_status);
-//    }
-//    return cmd_list;
-//}

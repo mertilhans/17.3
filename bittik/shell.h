@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 03:36:35 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 04:34:03 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 05:23:48 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,6 @@ typedef struct s_exec_data
     char **env;
     int original_stdin;
     int original_stdout;
-    int return_status;
 } t_exec_data;
 
 typedef struct s_heredoc
@@ -165,7 +164,6 @@ typedef struct s_all
     t_parser *cmd_list;
     t_parser *last_cmd;
     t_env  *env_list;
-    int exit_status;
 }t_all;
 
 //typedef struct s_all
@@ -283,6 +281,8 @@ void *env_gb_malloc(size_t size);
 void env_gb_free_all(void);
 void env_gc_free(void *ptr);
 
+void	cleanup_env_array(char **env_array);
+
 // Garbage Collector functions
 t_gb **get_gb_list(void);
 t_gb **get_env_gb_list(void);
@@ -310,22 +310,27 @@ void gc_free(void *ptr);
 
 // Variable expansion functions
 int is_valid_char(char c);
-char *expand_variables(char *str, t_env *env_list, int exit_status);
-char *expand_with_quotes(char *str, t_env *env_list, int exit_status);
-char *handle_dollar(char *str, int *pos, t_env *env_list, int exit_status);
+char *expand_variables(char *str, t_env *env_list);
+char *expand_with_quotes(char *str, t_env *env_list);
+char *handle_dollar(char *str, int *pos, t_env *env_list);
 char *handle_simple(const char *str, int *i, t_env *env_list);
+char *expand_heredoc_line(char *str, t_env *env_list);
+
 char *ft_itoa(int n);
 char *push_char_res(char *res, char c, int *res_len, int *res_cap);
 char **split_expanded_string(char *str);
 
 // Heredoc with expansion functions
-char *read_heredoc_with_expand(char *delimiter, t_env *env_list, int exit_status);
-int ft_h_built_expand(t_redirection *current_redir,t_heredoc_data *data,t_env *env_list, int exit_status);
+char *read_heredoc_with_expand(char *delimiter, t_env *env_list);
+int ft_h_built_expand(t_redirection *current_redir, t_heredoc_data *data, t_env *env_list);
+int process_heredocs(t_parser *cmd, t_env *env_list);
 
 void close_all_fds_except_std(t_parser *cmd);
 void tt(t_exec_data *data);
 int get_last_exit_status(void);
 void set_last_exit_status(int status);
-char *expand_heredoc_line(char *str, t_env *env_list, int exit_status);
+
+int process_command_line(char *line, t_env **env_list, char **env);
+int process_command(t_parser *cmd, t_exec_data *data, t_env **env_list);
 
 #endif
