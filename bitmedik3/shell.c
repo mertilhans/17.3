@@ -1,0 +1,230 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   shell.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: merilhan <merilhan@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/07/03 03:36:25 by husarpka          #+#    #+#             */
+/*   Updated: 2025/08/11 17:10:32 by merilhan         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "shell.h"
+
+t_tokenizer	*tokenizer_init(char *input)
+{
+	t_tokenizer	*tokenizer;
+
+	if (!input)
+		return (NULL);
+	tokenizer = gb_malloc(sizeof(t_tokenizer));
+	if (!tokenizer)
+		return (NULL);
+	tokenizer->input = ft_strdup(input);
+	if (!tokenizer->input)
+	{
+		gc_free(tokenizer);
+		return (NULL);
+	}
+	tokenizer->pos = 0;
+	tokenizer->len = ft_strlen(input);
+	if (tokenizer->len > 0)
+		tokenizer->current = input[0];
+	else
+		tokenizer->current = '\0';
+	return (tokenizer);
+}
+
+t_token	*create_token(t_token_type type, char *value)
+{
+	t_token	*token;
+
+	token = gb_malloc(sizeof(t_token));
+	if (!token)
+		return (NULL);
+	token->type = type;
+	if (value)
+		token->value = ft_strdup(value);
+	else
+		token->value = NULL;
+	token->next = NULL;
+	return (token);
+}
+
+static void	init_shlvl(t_env **env_list, t_export **export_list)
+{
+	t_env	*shlvl_node;
+	int		shlvl_value;
+	char	*shlvl_str;
+
+	shlvl_node = find_env(*env_list, "SHLVL");
+	shlvl_value = 1;
+	if (shlvl_node && shlvl_node->value)
+		shlvl_value = ft_atoi(shlvl_node->value) + 1;
+	shlvl_str = ft_itoa(shlvl_value);
+	set_env_value(env_list, "SHLVL", shlvl_str);
+	set_export_value(export_list, "SHLVL", shlvl_str);
+}
+
+static void	init_pwd(t_env **env_list, t_export **export_list)
+{
+	t_env	*pwd_node;
+	char	*current_pwd;
+
+	pwd_node = find_env(*env_list, "PWD");
+	if (!pwd_node)
+	{
+		current_pwd = getcwd(NULL, 0);
+		if (current_pwd)
+		{
+			set_env_value(env_list, "PWD", current_pwd);
+			set_export_value(export_list, "PWD", current_pwd);
+			free(current_pwd);
+		}
+	}
+}
+
+static void	init_oldpwd(t_env **env_list, t_export **export_list)
+{
+	t_env	*oldpwd_node;
+
+	oldpwd_node = find_env(*env_list, "OLDPWD");
+	if (!oldpwd_node)
+		set_export_value(export_list, "OLDPWD", NULL);
+}
+
+void	init_shell_variables(t_env **env_list)
+{
+	t_export	**export_list;
+
+	export_list = get_export_list();
+	init_shlvl(env_list, export_list);
+	init_pwd(env_list, export_list);
+	init_oldpwd(env_list, export_list);
+}
+
+t_env *initialize_shell(char **env)
+{
+    t_env *env_list;
+    t_export **export_list;
+
+    // Environment initialize
+    env_list = init_env(env);
+    export_list = get_export_list();
+    *export_list = init_export_from_env(env_list);
+    
+    // Shell variables
+    init_shell_variables(&env_list);
+    
+    // Signal setup
+    setup_interactive_signals();
+    
+    // Initial exit status
+    set_last_exit_status(0);
+    
+    return env_list;
+}
+
+void	cleanup_env_array(char **env_array)
+{
+	int	i;
+
+	if (!env_array)
+		return ;
+	i = 0;
+	while (env_array[i])
+	{
+		env_gc_free(env_array[i]);
+		i++;
+	}
+	env_gc_free(env_array);
+}
+
+int process_command_line(char *line, t_env **env_list, char **env)
+{
+    t_token *tokens;
+    t_parser *cmd_list;
+    char **updated_env;
+
+    // Başta ve sonda boşlukları trim et
+    while (*line && ft_ispace(*line))
+        line++;
+    
+    if (!*line)
+        return 0;
+
+    add_history(line);
+    
+    tokens = tokenize_input(line);
+    if (!tokens)
+        return 0; // Syntax error oldu, devam et
+    
+    cmd_list = parse_tokens(tokens, *env_list);
+    if (!cmd_list)
+        return 0; // Parse error oldu, devam et
+    
+    // Command execute et
+    if (cmd_list && cmd_list->argv && cmd_list->argv[0])
+    {
+        updated_env = env_list_to_array(*env_list);
+        if (updated_env)
+        {
+            execute_cmds(cmd_list, updated_env, env_list);
+            cleanup_env_array(updated_env);
+        }
+        else
+            execute_cmds(cmd_list, env, env_list);
+    }
+    
+    return 0; // Shell devam etsin
+}
+void shell_loop(t_env *env_list, char **env)
+{
+    char *line;
+
+    while (1)
+    {
+        setup_interactive_signals();
+        
+        line = readline("MiniShell->>>   ");
+        if (!line)
+        {
+            printf("exit\n");
+            break;
+        }
+        if (line[0] == '\0')
+        {
+            free(line);
+            continue; // Boş satır, devam et
+        }
+        
+        if (process_command_line(line, &env_list, env))
+        {
+            free(line);
+            break; // Shell'den çık
+        }
+        free(line);
+        
+        setup_interactive_signals();
+    }
+}
+
+int main(int ac, char **av, char **env)
+{
+    t_env *env_list;
+    
+    (void)ac;
+    (void)av;
+    
+    set_last_exit_status(0);
+      
+    env_list = initialize_shell(env);
+    shell_loop(env_list, env);
+    
+    rl_clear_history();
+    env_gb_free_all();
+    gb_free_all();
+    
+    return get_last_exit_status();
+}

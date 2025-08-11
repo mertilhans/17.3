@@ -1,0 +1,837 @@
+==== FD TEST RESULTS ====
+
+==== TEST CASE ====
+echo test > test_out.txt
+==296908== Memcheck, a memory error detector
+==296908== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296908== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296908== Command: ./minishell
+==296908== 
+MiniShell->>>   echo test > test_out.txt
+test
+MiniShell->>>   ==296908== 
+==296908== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296908== 
+==296908== HEAP SUMMARY:
+==296908==     in use at exit: 208,216 bytes in 223 blocks
+==296908==   total heap usage: 1,379 allocs, 1,156 frees, 250,380 bytes allocated
+==296908== 
+==296908== LEAK SUMMARY:
+==296908==    definitely lost: 0 bytes in 0 blocks
+==296908==    indirectly lost: 0 bytes in 0 blocks
+==296908==      possibly lost: 0 bytes in 0 blocks
+==296908==    still reachable: 0 bytes in 0 blocks
+==296908==         suppressed: 208,216 bytes in 223 blocks
+==296908== 
+==296908== For lists of detected and suppressed errors, rerun with: -s
+==296908== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+cat < test_out.txt
+==296918== Memcheck, a memory error detector
+==296918== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296918== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296918== Command: ./minishell
+==296918== 
+MiniShell->>>   cat < test_out.txt
+MiniShell->>>   ==296918== 
+==296918== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296918== 
+==296918== HEAP SUMMARY:
+==296918==     in use at exit: 208,210 bytes in 223 blocks
+==296918==   total heap usage: 1,370 allocs, 1,147 frees, 250,074 bytes allocated
+==296918== 
+==296918== LEAK SUMMARY:
+==296918==    definitely lost: 0 bytes in 0 blocks
+==296918==    indirectly lost: 0 bytes in 0 blocks
+==296918==      possibly lost: 0 bytes in 0 blocks
+==296918==    still reachable: 0 bytes in 0 blocks
+==296918==         suppressed: 208,210 bytes in 223 blocks
+==296918== 
+==296918== For lists of detected and suppressed errors, rerun with: -s
+==296918== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+echo test >> test_out.txt
+==296923== Memcheck, a memory error detector
+==296923== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296923== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296923== Command: ./minishell
+==296923== 
+MiniShell->>>   echo test >> test_out.txt
+test
+MiniShell->>>   ==296923== 
+==296923== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296923== 
+==296923== HEAP SUMMARY:
+==296923==     in use at exit: 208,217 bytes in 223 blocks
+==296923==   total heap usage: 1,379 allocs, 1,156 frees, 250,385 bytes allocated
+==296923== 
+==296923== LEAK SUMMARY:
+==296923==    definitely lost: 0 bytes in 0 blocks
+==296923==    indirectly lost: 0 bytes in 0 blocks
+==296923==      possibly lost: 0 bytes in 0 blocks
+==296923==    still reachable: 0 bytes in 0 blocks
+==296923==         suppressed: 208,217 bytes in 223 blocks
+==296923== 
+==296923== For lists of detected and suppressed errors, rerun with: -s
+==296923== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+cat < test_out.txt | grep test
+==296927== Memcheck, a memory error detector
+==296927== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296927== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296927== Command: ./minishell
+==296927== 
+MiniShell->>>   cat < test_out.txt | grep test
+MiniShell->>>   ==296927== 
+==296927== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296927== 
+==296927== HEAP SUMMARY:
+==296927==     in use at exit: 208,222 bytes in 223 blocks
+==296927==   total heap usage: 1,399 allocs, 1,176 frees, 250,826 bytes allocated
+==296927== 
+==296927== LEAK SUMMARY:
+==296927==    definitely lost: 0 bytes in 0 blocks
+==296927==    indirectly lost: 0 bytes in 0 blocks
+==296927==      possibly lost: 0 bytes in 0 blocks
+==296927==    still reachable: 0 bytes in 0 blocks
+==296927==         suppressed: 208,222 bytes in 223 blocks
+==296927== 
+==296927== For lists of detected and suppressed errors, rerun with: -s
+==296927== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+ls | cat | cat | cat | grep .c
+==296933== Memcheck, a memory error detector
+==296933== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296933== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296933== Command: ./minishell
+==296933== 
+MiniShell->>>   ls | cat | cat | cat | grep .c
+builtin_basic.c
+builtin_export.c
+env_array.c
+env_basic.c
+env_free.c
+env_init.c
+env_operations.c
+execute.c
+exit_status.c
+expander.c
+export_basic.c
+export_operations.c
+free.c
+gb_basic.c
+gb.c
+gb_env.c
+gb_main.c
+lexer.c
+lexer_extension.c
+lexer_utils.c
+parser.c
+shell.c
+signal_handler.c
+utils.c
+MiniShell->>>   ==296933== 
+==296933== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296933== 
+==296933== HEAP SUMMARY:
+==296933==     in use at exit: 208,222 bytes in 223 blocks
+==296933==   total heap usage: 1,437 allocs, 1,214 frees, 251,673 bytes allocated
+==296933== 
+==296933== LEAK SUMMARY:
+==296933==    definitely lost: 0 bytes in 0 blocks
+==296933==    indirectly lost: 0 bytes in 0 blocks
+==296933==      possibly lost: 0 bytes in 0 blocks
+==296933==    still reachable: 0 bytes in 0 blocks
+==296933==         suppressed: 208,222 bytes in 223 blocks
+==296933== 
+==296933== For lists of detected and suppressed errors, rerun with: -s
+==296933== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+echo hello | tr a-z A-Z | tr A-Z a-z | cat
+==296942== Memcheck, a memory error detector
+==296942== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296942== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296942== Command: ./minishell
+==296942== 
+MiniShell->>>   echo hello | tr a-z A-Z | tr A-Z a-z | cat
+==296946== 
+==296946== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296946== 
+==296946== HEAP SUMMARY:
+==296946==     in use at exit: 208,313 bytes in 226 blocks
+==296946==   total heap usage: 1,453 allocs, 1,227 frees, 252,287 bytes allocated
+==296946== 
+==296946== LEAK SUMMARY:
+==296946==    definitely lost: 0 bytes in 0 blocks
+==296946==    indirectly lost: 0 bytes in 0 blocks
+==296946==      possibly lost: 0 bytes in 0 blocks
+==296946==    still reachable: 0 bytes in 0 blocks
+==296946==         suppressed: 208,313 bytes in 226 blocks
+==296946== 
+==296946== For lists of detected and suppressed errors, rerun with: -s
+==296946== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+hello
+MiniShell->>>   ==296942== 
+==296942== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296942== 
+==296942== HEAP SUMMARY:
+==296942==     in use at exit: 208,234 bytes in 223 blocks
+==296942==   total heap usage: 1,456 allocs, 1,233 frees, 252,329 bytes allocated
+==296942== 
+==296942== LEAK SUMMARY:
+==296942==    definitely lost: 0 bytes in 0 blocks
+==296942==    indirectly lost: 0 bytes in 0 blocks
+==296942==      possibly lost: 0 bytes in 0 blocks
+==296942==    still reachable: 0 bytes in 0 blocks
+==296942==         suppressed: 208,234 bytes in 223 blocks
+==296942== 
+==296942== For lists of detected and suppressed errors, rerun with: -s
+==296942== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+cat < nonexistent_file.txt
+==296951== Memcheck, a memory error detector
+==296951== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296951== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296951== Command: ./minishell
+==296951== 
+MiniShell->>>   cat < nonexistent_file.txt
+nonexistent_file.txt: No such file or directory
+==296954== 
+==296954== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296954== 
+==296954== HEAP SUMMARY:
+==296954==     in use at exit: 208,281 bytes in 226 blocks
+==296954==   total heap usage: 1,368 allocs, 1,142 frees, 250,112 bytes allocated
+==296954== 
+==296954== LEAK SUMMARY:
+==296954==    definitely lost: 0 bytes in 0 blocks
+==296954==    indirectly lost: 0 bytes in 0 blocks
+==296954==      possibly lost: 0 bytes in 0 blocks
+==296954==    still reachable: 0 bytes in 0 blocks
+==296954==         suppressed: 208,281 bytes in 226 blocks
+==296954== 
+==296954== For lists of detected and suppressed errors, rerun with: -s
+==296954== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+MiniShell->>>   ==296951== 
+==296951== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296951== 
+==296951== HEAP SUMMARY:
+==296951==     in use at exit: 208,218 bytes in 223 blocks
+==296951==   total heap usage: 1,371 allocs, 1,148 frees, 250,154 bytes allocated
+==296951== 
+==296951== LEAK SUMMARY:
+==296951==    definitely lost: 0 bytes in 0 blocks
+==296951==    indirectly lost: 0 bytes in 0 blocks
+==296951==      possibly lost: 0 bytes in 0 blocks
+==296951==    still reachable: 0 bytes in 0 blocks
+==296951==         suppressed: 208,218 bytes in 223 blocks
+==296951== 
+==296951== For lists of detected and suppressed errors, rerun with: -s
+==296951== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+echo test > /dev/null && cat < notexist | cat > yep.txt
+==296956== Memcheck, a memory error detector
+==296956== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296956== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296956== Command: ./minishell
+==296956== 
+MiniShell->>>   echo test > /dev/null && cat < notexist | cat > yep.txt
+notexist: No such file or directory
+==296961== 
+==296961== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296961== 
+==296961== HEAP SUMMARY:
+==296961==     in use at exit: 208,339 bytes in 226 blocks
+==296961==   total heap usage: 1,447 allocs, 1,221 frees, 252,123 bytes allocated
+==296961== 
+==296961== LEAK SUMMARY:
+==296961==    definitely lost: 0 bytes in 0 blocks
+==296961==    indirectly lost: 0 bytes in 0 blocks
+==296961==      possibly lost: 0 bytes in 0 blocks
+==296961==    still reachable: 0 bytes in 0 blocks
+==296961==         suppressed: 208,339 bytes in 226 blocks
+==296961== 
+==296961== For lists of detected and suppressed errors, rerun with: -s
+==296961== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+MiniShell->>>   ==296956== 
+==296956== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296956== 
+==296956== HEAP SUMMARY:
+==296956==     in use at exit: 208,247 bytes in 223 blocks
+==296956==   total heap usage: 1,450 allocs, 1,227 frees, 252,165 bytes allocated
+==296956== 
+==296956== LEAK SUMMARY:
+==296956==    definitely lost: 0 bytes in 0 blocks
+==296956==    indirectly lost: 0 bytes in 0 blocks
+==296956==      possibly lost: 0 bytes in 0 blocks
+==296956==    still reachable: 0 bytes in 0 blocks
+==296956==         suppressed: 208,247 bytes in 223 blocks
+==296956== 
+==296956== For lists of detected and suppressed errors, rerun with: -s
+==296956== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+cat << EOF | grep test
+test line
+EOF
+==296964== Memcheck, a memory error detector
+==296964== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296964== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296964== Command: ./minishell
+==296964== 
+MiniShell->>>   cat << EOF | grep test
+> > test line
+MiniShell->>>   ==296964== 
+==296964== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296964== 
+==296964== HEAP SUMMARY:
+==296964==     in use at exit: 208,214 bytes in 223 blocks
+==296964==   total heap usage: 1,423 allocs, 1,200 frees, 251,034 bytes allocated
+==296964== 
+==296964== LEAK SUMMARY:
+==296964==    definitely lost: 0 bytes in 0 blocks
+==296964==    indirectly lost: 0 bytes in 0 blocks
+==296964==      possibly lost: 0 bytes in 0 blocks
+==296964==    still reachable: 0 bytes in 0 blocks
+==296964==         suppressed: 208,214 bytes in 223 blocks
+==296964== 
+==296964== For lists of detected and suppressed errors, rerun with: -s
+==296964== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+
+==296970== Memcheck, a memory error detector
+==296970== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296970== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296970== Command: ./minishell
+==296970== 
+MiniShell->>>   
+MiniShell->>>   ==296970== 
+==296970== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296970== 
+==296970== HEAP SUMMARY:
+==296970==     in use at exit: 204,175 bytes in 221 blocks
+==296970==   total heap usage: 1,193 allocs, 972 frees, 241,218 bytes allocated
+==296970== 
+==296970== LEAK SUMMARY:
+==296970==    definitely lost: 0 bytes in 0 blocks
+==296970==    indirectly lost: 0 bytes in 0 blocks
+==296970==      possibly lost: 0 bytes in 0 blocks
+==296970==    still reachable: 0 bytes in 0 blocks
+==296970==         suppressed: 204,175 bytes in 221 blocks
+==296970== 
+==296970== For lists of detected and suppressed errors, rerun with: -s
+==296970== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+==== TEST CASE ====
+cat << A | cat << B
+bir
+A
+iki
+B
+==296974== Memcheck, a memory error detector
+==296974== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296974== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296974== Command: ./minishell
+==296974== 
+MiniShell->>>   cat << A | cat << B
+> > > > iki
+MiniShell->>>   ==296974== 
+==296974== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296974== 
+==296974== HEAP SUMMARY:
+==296974==     in use at exit: 208,211 bytes in 223 blocks
+==296974==   total heap usage: 1,444 allocs, 1,221 frees, 251,168 bytes allocated
+==296974== 
+==296974== LEAK SUMMARY:
+==296974==    definitely lost: 0 bytes in 0 blocks
+==296974==    indirectly lost: 0 bytes in 0 blocks
+==296974==      possibly lost: 0 bytes in 0 blocks
+==296974==    still reachable: 0 bytes in 0 blocks
+==296974==         suppressed: 208,211 bytes in 223 blocks
+==296974== 
+==296974== For lists of detected and suppressed errors, rerun with: -s
+==296974== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+cat << E | grep test | cat > temp.txt
+test line
+E
+==296979== Memcheck, a memory error detector
+==296979== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296979== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296979== Command: ./minishell
+==296979== 
+MiniShell->>>   cat << E | grep test | cat > temp.txt
+> > MiniShell->>>   ==296979== 
+==296979== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296979== 
+==296979== HEAP SUMMARY:
+==296979==     in use at exit: 208,229 bytes in 223 blocks
+==296979==   total heap usage: 1,455 allocs, 1,232 frees, 251,818 bytes allocated
+==296979== 
+==296979== LEAK SUMMARY:
+==296979==    definitely lost: 0 bytes in 0 blocks
+==296979==    indirectly lost: 0 bytes in 0 blocks
+==296979==      possibly lost: 0 bytes in 0 blocks
+==296979==    still reachable: 0 bytes in 0 blocks
+==296979==         suppressed: 208,229 bytes in 223 blocks
+==296979== 
+==296979== For lists of detected and suppressed errors, rerun with: -s
+==296979== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+cat <
+==296986== Memcheck, a memory error detector
+==296986== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==296986== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==296986== Command: ./minishell
+==296986== 
+MiniShell->>>   cat <
+MiniShell->>>   ==296986== 
+==296986== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==296986== 
+==296986== HEAP SUMMARY:
+==296986==     in use at exit: 208,197 bytes in 223 blocks
+==296986==   total heap usage: 1,358 allocs, 1,135 frees, 249,724 bytes allocated
+==296986== 
+==296986== LEAK SUMMARY:
+==296986==    definitely lost: 0 bytes in 0 blocks
+==296986==    indirectly lost: 0 bytes in 0 blocks
+==296986==      possibly lost: 0 bytes in 0 blocks
+==296986==    still reachable: 0 bytes in 0 blocks
+==296986==         suppressed: 208,197 bytes in 223 blocks
+==296986== 
+==296986== For lists of detected and suppressed errors, rerun with: -s
+==296986== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+echo >
+==297000== Memcheck, a memory error detector
+==297000== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297000== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297000== Command: ./minishell
+==297000== 
+MiniShell->>>   echo >
+
+MiniShell->>>   ==297000== 
+==297000== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297000== 
+==297000== HEAP SUMMARY:
+==297000==     in use at exit: 208,198 bytes in 223 blocks
+==297000==   total heap usage: 1,356 allocs, 1,133 frees, 249,709 bytes allocated
+==297000== 
+==297000== LEAK SUMMARY:
+==297000==    definitely lost: 0 bytes in 0 blocks
+==297000==    indirectly lost: 0 bytes in 0 blocks
+==297000==      possibly lost: 0 bytes in 0 blocks
+==297000==    still reachable: 0 bytes in 0 blocks
+==297000==         suppressed: 208,198 bytes in 223 blocks
+==297000== 
+==297000== For lists of detected and suppressed errors, rerun with: -s
+==297000== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+>
+==297004== Memcheck, a memory error detector
+==297004== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297004== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297004== Command: ./minishell
+==297004== 
+MiniShell->>>   >
+bash: syntax error near unexpected token `newline'
+MiniShell->>>   ==297004== 
+==297004== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297004== 
+==297004== HEAP SUMMARY:
+==297004==     in use at exit: 208,193 bytes in 223 blocks
+==297004==   total heap usage: 1,214 allocs, 991 frees, 245,590 bytes allocated
+==297004== 
+==297004== LEAK SUMMARY:
+==297004==    definitely lost: 0 bytes in 0 blocks
+==297004==    indirectly lost: 0 bytes in 0 blocks
+==297004==      possibly lost: 0 bytes in 0 blocks
+==297004==    still reachable: 0 bytes in 0 blocks
+==297004==         suppressed: 208,193 bytes in 223 blocks
+==297004== 
+==297004== For lists of detected and suppressed errors, rerun with: -s
+==297004== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+|
+==297008== Memcheck, a memory error detector
+==297008== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297008== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297008== Command: ./minishell
+==297008== 
+MiniShell->>>   |
+bash: syntax error near unexpected token `|'
+MiniShell->>>   ==297008== 
+==297008== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297008== 
+==297008== HEAP SUMMARY:
+==297008==     in use at exit: 208,193 bytes in 223 blocks
+==297008==   total heap usage: 1,200 allocs, 977 frees, 245,322 bytes allocated
+==297008== 
+==297008== LEAK SUMMARY:
+==297008==    definitely lost: 0 bytes in 0 blocks
+==297008==    indirectly lost: 0 bytes in 0 blocks
+==297008==      possibly lost: 0 bytes in 0 blocks
+==297008==    still reachable: 0 bytes in 0 blocks
+==297008==         suppressed: 208,193 bytes in 223 blocks
+==297008== 
+==297008== For lists of detected and suppressed errors, rerun with: -s
+==297008== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+<<
+==297012== Memcheck, a memory error detector
+==297012== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297012== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297012== Command: ./minishell
+==297012== 
+MiniShell->>>   <<
+bash: syntax error near unexpected token `newline'
+MiniShell->>>   ==297012== 
+==297012== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297012== 
+==297012== HEAP SUMMARY:
+==297012==     in use at exit: 208,194 bytes in 223 blocks
+==297012==   total heap usage: 1,214 allocs, 991 frees, 245,595 bytes allocated
+==297012== 
+==297012== LEAK SUMMARY:
+==297012==    definitely lost: 0 bytes in 0 blocks
+==297012==    indirectly lost: 0 bytes in 0 blocks
+==297012==      possibly lost: 0 bytes in 0 blocks
+==297012==    still reachable: 0 bytes in 0 blocks
+==297012==         suppressed: 208,194 bytes in 223 blocks
+==297012== 
+==297012== For lists of detected and suppressed errors, rerun with: -s
+==297012== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+echo test > test.txt && cat < test.txt | cat | cat
+==297016== Memcheck, a memory error detector
+==297016== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297016== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297016== Command: ./minishell
+==297016== 
+MiniShell->>>   echo test > test.txt && cat < test.txt | cat | cat
+==297019== 
+==297019== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297019== 
+==297019== HEAP SUMMARY:
+==297019==     in use at exit: 208,329 bytes in 226 blocks
+==297019==   total heap usage: 1,449 allocs, 1,223 frees, 252,157 bytes allocated
+==297019== 
+==297019== LEAK SUMMARY:
+==297019==    definitely lost: 0 bytes in 0 blocks
+==297019==    indirectly lost: 0 bytes in 0 blocks
+==297019==      possibly lost: 0 bytes in 0 blocks
+==297019==    still reachable: 0 bytes in 0 blocks
+==297019==         suppressed: 208,329 bytes in 226 blocks
+==297019== 
+==297019== For lists of detected and suppressed errors, rerun with: -s
+==297019== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+MiniShell->>>   ==297016== 
+==297016== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297016== 
+==297016== HEAP SUMMARY:
+==297016==     in use at exit: 208,242 bytes in 223 blocks
+==297016==   total heap usage: 1,452 allocs, 1,229 frees, 252,199 bytes allocated
+==297016== 
+==297016== LEAK SUMMARY:
+==297016==    definitely lost: 0 bytes in 0 blocks
+==297016==    indirectly lost: 0 bytes in 0 blocks
+==297016==      possibly lost: 0 bytes in 0 blocks
+==297016==    still reachable: 0 bytes in 0 blocks
+==297016==         suppressed: 208,242 bytes in 223 blocks
+==297016== 
+==297016== For lists of detected and suppressed errors, rerun with: -s
+==297016== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+ls | grep .sh > file.txt
+==297023== Memcheck, a memory error detector
+==297023== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297023== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297023== Command: ./minishell
+==297023== 
+MiniShell->>>   ls | grep .sh > file.txt
+MiniShell->>>   ==297023== 
+==297023== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297023== 
+==297023== HEAP SUMMARY:
+==297023==     in use at exit: 208,216 bytes in 223 blocks
+==297023==   total heap usage: 1,399 allocs, 1,176 frees, 250,792 bytes allocated
+==297023== 
+==297023== LEAK SUMMARY:
+==297023==    definitely lost: 0 bytes in 0 blocks
+==297023==    indirectly lost: 0 bytes in 0 blocks
+==297023==      possibly lost: 0 bytes in 0 blocks
+==297023==    still reachable: 0 bytes in 0 blocks
+==297023==         suppressed: 208,216 bytes in 223 blocks
+==297023== 
+==297023== For lists of detected and suppressed errors, rerun with: -s
+==297023== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+cat << EOF | cat | cat
+line
+EOF
+==297029== Memcheck, a memory error detector
+==297029== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297029== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297029== Command: ./minishell
+==297029== 
+MiniShell->>>   cat << EOF | cat | cat
+> > line
+MiniShell->>>   ==297029== 
+==297029== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297029== 
+==297029== HEAP SUMMARY:
+==297029==     in use at exit: 208,214 bytes in 223 blocks
+==297029==   total heap usage: 1,429 allocs, 1,206 frees, 251,124 bytes allocated
+==297029== 
+==297029== LEAK SUMMARY:
+==297029==    definitely lost: 0 bytes in 0 blocks
+==297029==    indirectly lost: 0 bytes in 0 blocks
+==297029==      possibly lost: 0 bytes in 0 blocks
+==297029==    still reachable: 0 bytes in 0 blocks
+==297029==         suppressed: 208,214 bytes in 223 blocks
+==297029== 
+==297029== For lists of detected and suppressed errors, rerun with: -s
+==297029== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+./fake_binary
+==297035== Memcheck, a memory error detector
+==297035== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297035== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297035== Command: ./minishell
+==297035== 
+MiniShell->>>   ./fake_binary
+bash :./fake_binaryNo such file or directory
+==297038== 
+==297038== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297038== 
+==297038== HEAP SUMMARY:
+==297038==     in use at exit: 208,255 bytes in 226 blocks
+==297038==   total heap usage: 1,351 allocs, 1,125 frees, 249,666 bytes allocated
+==297038== 
+==297038== LEAK SUMMARY:
+==297038==    definitely lost: 0 bytes in 0 blocks
+==297038==    indirectly lost: 0 bytes in 0 blocks
+==297038==      possibly lost: 0 bytes in 0 blocks
+==297038==    still reachable: 0 bytes in 0 blocks
+==297038==         suppressed: 208,255 bytes in 226 blocks
+==297038== 
+==297038== For lists of detected and suppressed errors, rerun with: -s
+==297038== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+MiniShell->>>   ==297035== 
+==297035== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297035== 
+==297035== HEAP SUMMARY:
+==297035==     in use at exit: 208,205 bytes in 223 blocks
+==297035==   total heap usage: 1,354 allocs, 1,131 frees, 249,708 bytes allocated
+==297035== 
+==297035== LEAK SUMMARY:
+==297035==    definitely lost: 0 bytes in 0 blocks
+==297035==    indirectly lost: 0 bytes in 0 blocks
+==297035==      possibly lost: 0 bytes in 0 blocks
+==297035==    still reachable: 0 bytes in 0 blocks
+==297035==         suppressed: 208,205 bytes in 223 blocks
+==297035== 
+==297035== For lists of detected and suppressed errors, rerun with: -s
+==297035== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+/bin/ls | ./nonexistent
+==297040== Memcheck, a memory error detector
+==297040== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297040== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297040== Command: ./minishell
+==297040== 
+MiniShell->>>   /bin/ls | ./nonexistent
+bash :./nonexistentNo such file or directory
+==297044== 
+==297044== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297044== 
+==297044== HEAP SUMMARY:
+==297044==     in use at exit: 208,275 bytes in 226 blocks
+==297044==   total heap usage: 1,370 allocs, 1,144 frees, 250,144 bytes allocated
+==297044== 
+==297044== LEAK SUMMARY:
+==297044==    definitely lost: 0 bytes in 0 blocks
+==297044==    indirectly lost: 0 bytes in 0 blocks
+==297044==      possibly lost: 0 bytes in 0 blocks
+==297044==    still reachable: 0 bytes in 0 blocks
+==297044==         suppressed: 208,275 bytes in 226 blocks
+==297044== 
+==297044== For lists of detected and suppressed errors, rerun with: -s
+==297044== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+MiniShell->>>   ==297040== 
+==297040== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297040== 
+==297040== HEAP SUMMARY:
+==297040==     in use at exit: 208,215 bytes in 223 blocks
+==297040==   total heap usage: 1,373 allocs, 1,150 frees, 250,186 bytes allocated
+==297040== 
+==297040== LEAK SUMMARY:
+==297040==    definitely lost: 0 bytes in 0 blocks
+==297040==    indirectly lost: 0 bytes in 0 blocks
+==297040==      possibly lost: 0 bytes in 0 blocks
+==297040==    still reachable: 0 bytes in 0 blocks
+==297040==         suppressed: 208,215 bytes in 223 blocks
+==297040== 
+==297040== For lists of detected and suppressed errors, rerun with: -s
+==297040== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+/bin/ls | /bin/fake
+==297046== Memcheck, a memory error detector
+==297046== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297046== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297046== Command: ./minishell
+==297046== 
+MiniShell->>>   /bin/ls | /bin/fake
+bash :/bin/fakeNo such file or directory
+==297050== 
+==297050== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297050== 
+==297050== HEAP SUMMARY:
+==297050==     in use at exit: 208,267 bytes in 226 blocks
+==297050==   total heap usage: 1,369 allocs, 1,143 frees, 250,092 bytes allocated
+==297050== 
+==297050== LEAK SUMMARY:
+==297050==    definitely lost: 0 bytes in 0 blocks
+==297050==    indirectly lost: 0 bytes in 0 blocks
+==297050==      possibly lost: 0 bytes in 0 blocks
+==297050==    still reachable: 0 bytes in 0 blocks
+==297050==         suppressed: 208,267 bytes in 226 blocks
+==297050== 
+==297050== For lists of detected and suppressed errors, rerun with: -s
+==297050== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+MiniShell->>>   ==297046== 
+==297046== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297046== 
+==297046== HEAP SUMMARY:
+==297046==     in use at exit: 208,211 bytes in 223 blocks
+==297046==   total heap usage: 1,372 allocs, 1,149 frees, 250,134 bytes allocated
+==297046== 
+==297046== LEAK SUMMARY:
+==297046==    definitely lost: 0 bytes in 0 blocks
+==297046==    indirectly lost: 0 bytes in 0 blocks
+==297046==      possibly lost: 0 bytes in 0 blocks
+==297046==    still reachable: 0 bytes in 0 blocks
+==297046==         suppressed: 208,211 bytes in 223 blocks
+==297046== 
+==297046== For lists of detected and suppressed errors, rerun with: -s
+==297046== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+echo ok | /bin/notexist | cat
+==297052== Memcheck, a memory error detector
+==297052== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297052== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297052== Command: ./minishell
+==297052== 
+MiniShell->>>   echo ok | /bin/notexist | cat
+bash :/bin/notexistNo such file or directory
+==297055== 
+==297055== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297055== 
+==297055== HEAP SUMMARY:
+==297055==     in use at exit: 208,287 bytes in 226 blocks
+==297055==   total heap usage: 1,398 allocs, 1,172 frees, 250,834 bytes allocated
+==297055== 
+==297056== 
+==297056== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297056== 
+==297056== HEAP SUMMARY:
+==297056==     in use at exit: 208,287 bytes in 226 blocks
+==297056==   total heap usage: 1,398 allocs, 1,172 frees, 250,834 bytes allocated
+==297056== 
+==297055== LEAK SUMMARY:
+==297055==    definitely lost: 0 bytes in 0 blocks
+==297055==    indirectly lost: 0 bytes in 0 blocks
+==297055==      possibly lost: 0 bytes in 0 blocks
+==297055==    still reachable: 0 bytes in 0 blocks
+==297055==         suppressed: 208,287 bytes in 226 blocks
+==297055== 
+==297055== For lists of detected and suppressed errors, rerun with: -s
+==297055== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==297056== LEAK SUMMARY:
+==297056==    definitely lost: 0 bytes in 0 blocks
+==297056==    indirectly lost: 0 bytes in 0 blocks
+==297056==      possibly lost: 0 bytes in 0 blocks
+==297056==    still reachable: 0 bytes in 0 blocks
+==297056==         suppressed: 208,287 bytes in 226 blocks
+==297056== 
+==297056== For lists of detected and suppressed errors, rerun with: -s
+==297056== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+MiniShell->>>   ==297052== 
+==297052== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297052== 
+==297052== HEAP SUMMARY:
+==297052==     in use at exit: 208,221 bytes in 223 blocks
+==297052==   total heap usage: 1,401 allocs, 1,178 frees, 250,876 bytes allocated
+==297052== 
+==297052== LEAK SUMMARY:
+==297052==    definitely lost: 0 bytes in 0 blocks
+==297052==    indirectly lost: 0 bytes in 0 blocks
+==297052==      possibly lost: 0 bytes in 0 blocks
+==297052==    still reachable: 0 bytes in 0 blocks
+==297052==         suppressed: 208,221 bytes in 223 blocks
+==297052== 
+==297052== For lists of detected and suppressed errors, rerun with: -s
+==297052== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
+
+==== TEST CASE ====
+ls | ./404 | cat
+==297059== Memcheck, a memory error detector
+==297059== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==297059== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==297059== Command: ./minishell
+==297059== 
+MiniShell->>>   ls | ./404 | cat
+bash :./404No such file or directory
+==297063== 
+==297063== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297063== 
+==297063== HEAP SUMMARY:
+==297063==     in use at exit: 208,261 bytes in 226 blocks
+==297063==   total heap usage: 1,387 allocs, 1,161 frees, 250,473 bytes allocated
+==297063== 
+==297063== LEAK SUMMARY:
+==297063==    definitely lost: 0 bytes in 0 blocks
+==297063==    indirectly lost: 0 bytes in 0 blocks
+==297063==      possibly lost: 0 bytes in 0 blocks
+==297063==    still reachable: 0 bytes in 0 blocks
+==297063==         suppressed: 208,261 bytes in 226 blocks
+==297063== 
+==297063== For lists of detected and suppressed errors, rerun with: -s
+==297063== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+MiniShell->>>   ==297059== 
+==297059== FILE DESCRIPTORS: 3 open (3 std) at exit.
+==297059== 
+==297059== HEAP SUMMARY:
+==297059==     in use at exit: 208,208 bytes in 223 blocks
+==297059==   total heap usage: 1,390 allocs, 1,167 frees, 250,515 bytes allocated
+==297059== 
+==297059== LEAK SUMMARY:
+==297059==    definitely lost: 0 bytes in 0 blocks
+==297059==    indirectly lost: 0 bytes in 0 blocks
+==297059==      possibly lost: 0 bytes in 0 blocks
+==297059==    still reachable: 0 bytes in 0 blocks
+==297059==         suppressed: 208,208 bytes in 223 blocks
+==297059== 
+==297059== For lists of detected and suppressed errors, rerun with: -s
+==297059== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 1 from 1)
