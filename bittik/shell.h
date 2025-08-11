@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 03:36:35 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 05:23:48 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 05:52:34 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -332,5 +332,6 @@ void set_last_exit_status(int status);
 
 int process_command_line(char *line, t_env **env_list, char **env);
 int process_command(t_parser *cmd, t_exec_data *data, t_env **env_list);
+char *heredoc_readline(const char *prompt);
 
 #endif

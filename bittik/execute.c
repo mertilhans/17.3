@@ -69,21 +69,137 @@ void close_all_fds_except_std(t_parser *cmd)
 }
 
 
-//void close_heredoc_fds(t_parser *cmd)
-//{
-//    t_parser *current;
+char *heredoc_readline(const char *prompt)
+{
+    char *line;
+    size_t line_size = 128;
+    size_t line_len = 0;
+    ssize_t bytes_read;
+    char ch;
+    int at_line_start = 1; // Satır başında mıyız?
     
-//    current = cmd;
-//    while (current)
-//    {
-//        if (current->heredoc_fd > 2)  // stdin/stdout/stderr dışındaki FD'ler
-//        {
-//            close(current->heredoc_fd);
-//            current->heredoc_fd = -1;
-//        }
-//        current = current->next;
-//    }
-//}
+    // Prompt'u yazdır
+    if (prompt)
+        write(STDOUT_FILENO, prompt, strlen(prompt));
+    
+    line = gb_malloc(line_size);
+    if (!line)
+        return NULL;
+    
+    while (1)
+    {
+        bytes_read = read(STDIN_FILENO, &ch, 1);
+        
+        if (bytes_read <= 0)
+        {
+            if (bytes_read == 0)
+            {
+                // EOF (Ctrl+D) - sadece satır başında işlem yap
+                if (at_line_start && line_len == 0)
+                {
+                    // Boş satırda Ctrl+D → EOF
+                    gc_free(line);
+                    return NULL; // EOF with empty line
+                }
+                else
+                {
+                    // Yazı yazılırken Ctrl+D → ignore et, devam et
+                    continue;
+                }
+            }
+            else if (errno == EINTR)
+            {
+                // Signal interrupted (Ctrl+C)
+                gc_free(line);
+                errno = EINTR; // Preserve errno for caller
+                return NULL;
+            }
+            else
+            {
+                // Real error
+                gc_free(line);
+                return NULL;
+            }
+        }
+        
+        if (ch == '\n')
+        {
+            line[line_len] = '\0';
+            return line;
+        }
+        
+        // Carriage return'ü atla
+        if (ch == '\r')
+            continue;
+        
+        // Artık satır başında değiliz
+        at_line_start = 0;
+        
+        // Buffer'ı genişlet gerekirse
+        if (line_len + 1 >= line_size)
+        {
+            char *new_line;
+            line_size *= 2;
+            new_line = gb_malloc(line_size);
+            if (!new_line)
+            {
+                gc_free(line);
+                return NULL;
+            }
+            memcpy(new_line, line, line_len);
+            gc_free(line);
+            line = new_line;
+        }
+        
+        line[line_len++] = ch;
+    }
+}
+
+char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
+{
+    heredoc_signals();
+    while (1)
+    {
+        errno = 0; // Reset errno
+        buf->line = heredoc_readline("> "); // Bu satırı değiştir (önceden ft_readline idi)
+        
+        if (!buf->line)
+        {
+            setup_interactive_signals();
+            
+            if (errno == EINTR)
+            {
+                // Ctrl+C pressed
+                set_last_exit_status(130);
+                return NULL;
+            }
+            else
+            {
+                // EOF (Ctrl+D)
+                printf("bash: warning: here-document at line 1 delimited by end-of-file (wanted `%s')\n", delimiter);
+                set_last_exit_status(0);
+                return buf->content;
+            }
+        }
+        
+        if ((size_t)ft_strlen(buf->line) == buf->delimiter_len &&
+            ft_strcmp(buf->line, delimiter) == 0)
+        {
+            gc_free(buf->line);
+            break;
+        }
+        if (!heredoc_append_line(buf))
+        {
+            not_her_app_exp(buf);
+            return NULL;
+        }
+        gc_free(buf->line);
+        buf->line = NULL;
+    }
+    setup_interactive_signals();
+    return buf->content;
+}
+
 
 char *copy_dir(const char *dir, int len)
 {
@@ -240,83 +356,104 @@ int redir_append(t_redirection *redir)
     return (0);
 }
 
-char *expand_buf(t_reader *r, size_t new_size)
+// char *expand_buf(t_reader *r, size_t new_size)
+// {
+//     char *new_buf;
+//     size_t i;
+
+//     new_buf = gb_malloc(new_size);
+//     if (!new_buf)
+//         return NULL;
+//     i = 0;
+//     while (i < r->pos)
+//     {
+//         new_buf[i] = r->buf[i];
+//         i++;
+//     }
+//     gc_free(r->buf);
+//     r->buf = new_buf;
+//     r->size = new_size;
+//     return (r->buf);
+// }
+
+// int add_char(t_reader *r, char c)
+// {
+//     size_t new_size;
+
+//     if (r->pos + 1 >= r->size)
+//     {
+//         new_size = r->size * 2;
+//         if (new_size < r->size + 1)
+//             new_size = r->size + 1;
+//         if (!expand_buf(r, new_size))
+//             return (0);
+//     }
+//     r->buf[r->pos++] = c;
+//     return (1);
+// }
+
+char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
 {
-    char *new_buf;
-    size_t i;
-
-    new_buf = gb_malloc(new_size);
-    if (!new_buf)
-        return NULL;
-    i = 0;
-    while (i < r->pos)
+    heredoc_signals();
+    
+    while (1)
     {
-        new_buf[i] = r->buf[i];
-        i++;
-    }
-    gc_free(r->buf);
-    r->buf = new_buf;
-    r->size = new_size;
-    return (r->buf);
-}
-
-int add_char(t_reader *r, char c)
-{
-    size_t new_size;
-
-    if (r->pos + 1 >= r->size)
-    {
-        new_size = r->size * 2;
-        if (new_size < r->size + 1)
-            new_size = r->size + 1;
-        if (!expand_buf(r, new_size))
-            return (0);
-    }
-    r->buf[r->pos++] = c;
-    return (1);
-}
-
-char *ft_readline_loop(t_reader *r)
-{
-    char c;
-    ssize_t n;
-
-    while ((n = read(STDIN_FILENO, &c, 1)) > 0)
-    {
-        if (c == '\n')
-            break;
-        // Satır başı karakterini (Carriage Return) atla
-        if (c == '\r')
-            continue;
-        if (!add_char(r, c))
+        errno = 0; // Reset errno
+        buf->line = heredoc_readline("> ");
+        
+        if (!buf->line)
         {
-            gc_free(r->buf);
+            setup_interactive_signals();
+            
+            if (errno == EINTR)
+            {
+                // Ctrl+C pressed - interrupt heredoc
+                set_last_exit_status(130);
+                return NULL;
+            }
+            else
+            {
+                // EOF (Ctrl+D) - bash davranışı
+                printf("bash: warning: here-document at line 1 delimited by end-of-file (wanted `%s')\n", delimiter);
+                set_last_exit_status(0);
+                return buf->content;
+            }
+        }
+        
+        // Delimiter kontrolü
+        if ((size_t)ft_strlen(buf->line) == buf->delimiter_len &&
+            ft_strcmp(buf->line, delimiter) == 0)
+        {
+            gc_free(buf->line);
+            break;
+        }
+        
+        if (!heredoc_append_line(buf))
+        {
+            not_her_app_exp(buf);
             return NULL;
         }
+        
+        gc_free(buf->line);
+        buf->line = NULL;
     }
-    if (n <= 0 && r->pos == 0)
-    {
-        gc_free(r->buf);
-        return NULL;
-    }
-    if (r->pos + 1 >= r->size && !expand_buf(r, r->pos + 1))
-        return NULL;
-    r->buf[r->pos] = '\0';
-    return (r->buf);
+    
+    setup_interactive_signals();
+    return buf->content;
 }
 
-char *ft_readline(char *prompt)
-{
-    t_reader r;
-    r.size = 1;
-    r.pos = 0;
-    r.buf = gb_malloc(r.size);
-    if (!r.buf)
-        return NULL;
-    if (prompt)
-        write(STDOUT_FILENO, prompt, ft_strlen(prompt));
-    return (ft_readline_loop(&r));
-}
+// char *ft_readline(char *prompt)
+// {
+//     t_reader r;
+//     r.size = 1;
+//     r.pos = 0;
+//     r.buf = gb_malloc(r.size);
+//     if (!r.buf)
+//         return NULL;
+//     if (prompt)
+//         write(STDOUT_FILENO, prompt, ft_strlen(prompt));
+//     return (ft_readline_loop(&r));
+// }
 
 int heredoc_append_line(t_heredoc_buffer *buf)
 {
@@ -385,11 +522,12 @@ char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
     while (1)
     {
         buf->line = ft_readline("> ");
-        if (!buf->line)
+        if (!buf->line) // Ctrl+D basıldığında (EOF)
         {
-            set_last_exit_status(130);
+            printf("bash: warning: here-document at line 1 delimited by end-of-file (wanted `%s')\n", delimiter);
+            set_last_exit_status(0); 
             setup_interactive_signals();
-            return (NULL);
+            return buf->content; 
         }
         if ((size_t)ft_strlen(buf->line) == buf->delimiter_len &&
             ft_strcmp(buf->line, delimiter) == 0)
@@ -415,13 +553,28 @@ char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter, t_env *
     heredoc_signals();
     while (1)
     {
-        buf->line = ft_readline("> ");
+        errno = 0; // Reset errno
+        buf->line = heredoc_readline("> "); // Bu satırı değiştir (önceden ft_readline idi)
+        
         if (!buf->line)
         {
-            set_last_exit_status(130);
             setup_interactive_signals();
-            return NULL;
+            
+            if (errno == EINTR)
+            {
+                // Ctrl+C pressed
+                set_last_exit_status(130);
+                return NULL;
+            }
+            else
+            {
+                // EOF (Ctrl+D)
+                printf("bash: warning: here-document at line 1 delimited by end-of-file (wanted `%s')\n", delimiter);
+                set_last_exit_status(0);
+                return buf->content;
+            }
         }
+        
         if ((size_t)ft_strlen(buf->line) == buf->delimiter_len &&
             ft_strcmp(buf->line, delimiter) == 0)
         {
@@ -448,7 +601,7 @@ char *read_single_heredoc_block(char *delimiter)
 
     if (!delimiter || *delimiter == '\0')
     {
-        printf("Heredoc malloc error\n");
+        printf("Heredoc delimiter error\n");
         return NULL;
     }
     buf.content = ft_strdup("");
@@ -456,16 +609,19 @@ char *read_single_heredoc_block(char *delimiter)
     buf.line_with_nl = NULL;
     buf.new_content = NULL;
     buf.delimiter_len = ft_strlen(delimiter);
+    
     if (!buf.content)
     {
-        perror("Heredoc malloc error\n");
+        perror("Heredoc malloc error");
         return NULL;
     }
-    result = readline_loop(&buf,delimiter);
-    if (result)
-        return result;
-    else
-        return buf.content;
+    result = readline_loop(&buf, delimiter);
+    if (!result && get_last_exit_status() == 130)
+    {
+        gc_free(buf.content);
+        return NULL;
+    }
+    return result ? result : buf.content;
 }
 
 char *read_heredoc_with_expand(char *delimiter, t_env *env_list)
@@ -475,7 +631,7 @@ char *read_heredoc_with_expand(char *delimiter, t_env *env_list)
 
     if (!delimiter || *delimiter == '\0')
     {
-        printf("delimiter error\n");
+        printf("Heredoc delimiter error\n");
         set_last_exit_status(1);
         return NULL;
     }
@@ -486,30 +642,33 @@ char *read_heredoc_with_expand(char *delimiter, t_env *env_list)
     buf.delimiter_len = ft_strlen(delimiter);
     if (!buf.content)
     {
-        perror("Heredoc malloc error\n");
+        perror("Heredoc malloc error");
         set_last_exit_status(1);
         return NULL;
     }
     result = readline_loop_expand(&buf, delimiter, env_list);
-    if (result)
-        return result;
-    else
+    if (!result && get_last_exit_status() == 130)
+    {
+        gc_free(buf.content);
         return NULL;
+    }
+    return result ? result : buf.content;
 }
 
 int ft_h_built_expand(t_redirection *current_redir, t_heredoc_data *data, t_env *env_list)
 {
     int pipefd[2];
+    
     if (current_redir->no_expand)
         data->heredoc_content = read_single_heredoc_block(current_redir->filename);
     else
         data->heredoc_content = read_heredoc_with_expand(current_redir->filename, env_list);
-    
+  
+    if (!data->heredoc_content && get_last_exit_status() == 130)
+        return -1; // Heredoc interrupted
     if (!data->heredoc_content)
-    {
-        set_last_exit_status(130); // Heredoc interrupted
-        return -1;
-    }
+        data->heredoc_content = ft_strdup("");
+    
     data->heredoc_len = ft_strlen(data->heredoc_content);
     if (pipe(pipefd) == -1)
     {
@@ -518,7 +677,9 @@ int ft_h_built_expand(t_redirection *current_redir, t_heredoc_data *data, t_env 
         set_last_exit_status(1);
         return -1;
     }
-    write(pipefd[1], data->heredoc_content, data->heredoc_len);
+    if (data->heredoc_len > 0)
+        write(pipefd[1], data->heredoc_content, data->heredoc_len);
+    
     close(pipefd[1]);
     gc_free(data->heredoc_content);
     data->last_heredoc_fd = pipefd[0];
