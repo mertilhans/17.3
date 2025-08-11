@@ -9,7 +9,6 @@ void built_echo(t_parser *cmd)
     i = 1;
     newline = 1;
    
-   
     // Tüm -n flaglerini kontrol et (bash davranışı)
     while (cmd->argv[i] && cmd->argv[i][0] == '-' && cmd->argv[i][1] == 'n')
     {
@@ -37,15 +36,15 @@ void built_echo(t_parser *cmd)
     
     while(cmd->argv[i])
     {
-        printf("%s", cmd->argv[i]);
+        write(STDOUT_FILENO, cmd->argv[i], ft_strlen(cmd->argv[i]));
         if(cmd->argv[i + 1] != NULL)
-            printf(" ");
+            write(STDOUT_FILENO, " ", 1);
         i++;
     }
 
-    
     if (newline)
-        printf("\n");
+        write(STDOUT_FILENO, "\n", 1);
+    
     set_last_exit_status(0);
 }
 
@@ -70,10 +69,8 @@ int built_cd(t_parser *cmd)
     {
         printf("bash: cd: too many arguments\n");
         exit_code = 1;
-        goto cleanup;
     }
-    
-    if (cmd->argv[1] == NULL || cmd->argv[1][0] == '\0')
+    else if (cmd->argv[1] == NULL || cmd->argv[1][0] == '\0')
     {
         // sadece cd yazıldığında veya cd ile boş argüman verildiğinde home'a git
         home_dir = getenv("HOME");
@@ -81,13 +78,11 @@ int built_cd(t_parser *cmd)
         {
             printf("cd: HOME not set\n");
             exit_code = 1;
-            goto cleanup;
         }
-        if (chdir(home_dir) != 0)
+        else if (chdir(home_dir) != 0)
         {
             perror("cd");
             exit_code = 1;
-            goto cleanup;
         }
     }
     else
@@ -96,26 +91,32 @@ int built_cd(t_parser *cmd)
         {
             perror("cd");
             exit_code = 1;
-            goto cleanup;
         }
     }
     
-    char *new_pwd = getcwd(NULL, 0);
-    if (new_pwd)
+    // PWD güncelleme - sadece chdir başarılıysa
+    if (exit_code == 0)
     {
-        setenv("PWD", new_pwd, 1);
-        if (old_pwd)
-            setenv("OLDPWD", old_pwd, 1);
-        free(new_pwd);
+        char *new_pwd = getcwd(NULL, 0);
+        if (new_pwd)
+        {
+            setenv("PWD", new_pwd, 1);
+            if (old_pwd)
+                setenv("OLDPWD", old_pwd, 1);
+            free(new_pwd);
+        }
     }
     
-cleanup:
-    if (current_pwd) free(current_pwd);
-    if (old_pwd) gc_free(old_pwd);
+    // Cleanup
+    if (current_pwd) 
+        free(current_pwd);
+    if (old_pwd) 
+        gc_free(old_pwd);
     
     set_last_exit_status(exit_code);
     return exit_code;
 }
+
 #include <errno.h>
 void builtin_pwd(void)
 {
@@ -151,6 +152,7 @@ void builtin_pwd(void)
         set_last_exit_status(1);
     }
 }
+
 int is_numeric_string(char *str)
 {
     int i = 0;
@@ -169,6 +171,7 @@ int is_numeric_string(char *str)
     }
     return 1;
 }
+
 void builtin_exit(t_parser *cmd)
 {
     int exit_code = 0;
@@ -179,11 +182,13 @@ void builtin_exit(t_parser *cmd)
         set_last_exit_status(1);
         return; 
     }
+    
     if (cmd->argv[1])
     {
         if (!is_numeric_string(cmd->argv[1]))
         {
             printf("bash: exit: %s: numeric argument required\n", cmd->argv[1]);
+            printf("exit\n");
             close(cmd->fd_i);
             close(cmd->fd_o);
             close_all_fds_except_std(cmd);
@@ -194,6 +199,8 @@ void builtin_exit(t_parser *cmd)
         exit_code = ft_atoi(cmd->argv[1]);
         exit_code = ((exit_code % 256) + 256) % 256;
     }
+    
+    printf("exit\n");
     close(cmd->fd_i);
     close(cmd->fd_o);
     close_all_fds_except_std(cmd);
@@ -201,6 +208,7 @@ void builtin_exit(t_parser *cmd)
     env_gb_free_all();
     exit(exit_code);
 }
+
 static void env_bubble_sort(char **env_array, int count)
 {
     int i, j;
@@ -244,7 +252,6 @@ static char **create_sorted_env_array(t_env *env_list)
     
     if (count == 0)
         return NULL;
-    
 
     env_array = gb_malloc(sizeof(char*) * (count + 1));
     if (!env_array)

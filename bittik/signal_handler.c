@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/11 06:29:14 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 06:56:44 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,20 +17,17 @@ void handle_sigint(int signum)
 {
     (void)signum;
     
-    printf("\n");
+    write(STDOUT_FILENO, "\n", 1);
     rl_on_new_line();
     rl_replace_line("", 0);
     rl_redisplay();
-    set_last_exit_status(130); // Ctrl+C için exit status 130
+    set_last_exit_status(130);
 }
 
 void handle_sigint_heredoc(int signum)
 {
     (void)signum;
-    printf("\n");
-    // Heredoc'tan çıkarken readline state'ini temizle
-    rl_on_new_line();
-    rl_replace_line("", 0);
+    write(STDOUT_FILENO, "\n", 1);
 }
 
 void heredoc_signals(void)
@@ -40,7 +37,7 @@ void heredoc_signals(void)
     
     sa_int.sa_handler = handle_sigint_heredoc;
     sigemptyset(&sa_int.sa_mask);
-    sa_int.sa_flags = 0; // No SA_RESTART - we want to interrupt read
+    sa_int.sa_flags = 0;
     sigaction(SIGINT, &sa_int, NULL);
     
     sa_quit.sa_handler = SIG_IGN;
@@ -69,7 +66,6 @@ void setup_parent_execution_signals(void)
 {
     struct sigaction sa_int, sa_quit;
     
-    // Parent process komut çalıştırırken signalleri ignore eder
     sa_int.sa_handler = SIG_IGN;
     sigemptyset(&sa_int.sa_mask);
     sa_int.sa_flags = 0;
@@ -83,7 +79,6 @@ void setup_parent_execution_signals(void)
 
 void setup_child_signals(void)
 {
-    // Child process'ler default signal handling'e döner
     signal(SIGINT, SIG_DFL); 
     signal(SIGQUIT, SIG_DFL); 
 }

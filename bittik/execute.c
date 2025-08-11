@@ -141,11 +141,10 @@ void not_her_app_exp(t_heredoc_buffer *buf)
     perror("line error");
     gc_free(buf->line);
     gc_free(buf->content);
-    // Signal'ları düzelt ve shell'e geri dön
+    // Signal'ları düzelt back at shele
     setup_interactive_signals();
 }
 
-// readline_loop - Basic heredoc reading without expansion
 char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
 {
     heredoc_signals();
@@ -156,13 +155,10 @@ char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
         
         if (!buf->line)
         {
-            // Heredoc'tan çıkarken readline state'ini temizle
-            rl_on_new_line();
-            rl_replace_line("", 0);
-            setup_interactive_signals();
-            
             if (errno == EINTR)
             {
+                // interrup geldi düzelt 
+                write(STDOUT_FILENO, "", 0);
                 set_last_exit_status(130);
                 return NULL;
             }
@@ -189,10 +185,6 @@ char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
         buf->line = NULL;
     }
     
-    // Heredoc başarıyla bittiğinde de readline state'ini temizle
-    rl_on_new_line();
-    rl_replace_line("", 0);
-    setup_interactive_signals();
     return buf->content;
 }
 
@@ -235,13 +227,9 @@ char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter, t_env *
         
         if (!buf->line)
         {
-            // Heredoc'tan çıkarken readline state'ini temizle
-            rl_on_new_line();
-            rl_replace_line("", 0);
-            setup_interactive_signals();
-            
             if (errno == EINTR)
             {
+                write(STDOUT_FILENO, "", 0);
                 set_last_exit_status(130);
                 return NULL;
             }
@@ -268,10 +256,6 @@ char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter, t_env *
         buf->line = NULL;
     }
     
-    // Heredoc başarıyla bittiğinde de readline state'ini temizle
-    rl_on_new_line();
-    rl_replace_line("", 0);
-    setup_interactive_signals();
     return buf->content;
 }
 
@@ -977,11 +961,11 @@ void wait_pids(t_exec_data *data)
     }
 }
 
-int heredoc_fd_error(t_parser *cmd_list,t_exec_data *data,t_parser *current_cmd)
+int heredoc_fd_error(t_parser *cmd_list, t_exec_data *data, t_parser *current_cmd)
 {
     t_parser *tmp_cmd;
 
-    // Stdout'u düzgün restore et - ÇOK ÖNEMLİ!
+    // Stdoutu düzgün restore et ÇOK ÖNEMLİ!
     if (data->original_stdin != -1)
     {
         dup2(data->original_stdin, STDIN_FILENO);
@@ -992,6 +976,7 @@ int heredoc_fd_error(t_parser *cmd_list,t_exec_data *data,t_parser *current_cmd)
         dup2(data->original_stdout, STDOUT_FILENO);
         close(data->original_stdout);
     }
+    write(STDOUT_FILENO, "", 0); // stdout'u flush et printf ile çakışıyor böyle signali skm
     
     tmp_cmd = cmd_list;
     while(tmp_cmd && tmp_cmd != current_cmd->next)
@@ -1018,8 +1003,10 @@ int heredoc_handle(t_parser *cmd_list, t_exec_data *data, t_env *env_list)
         {
             set_last_exit_status(130);
             heredoc_fd_error(cmd_list, data, current_cmd);
-            // Heredoc interrupt sonrası signal'ları düzelt - ÇOK ÖNEMLİ!
-            setup_interactive_signals();
+            write(STDOUT_FILENO, "", 0);
+            setup_interactive_signals(); 
+            // Readline resetle ama sadece burada
+            rl_forced_update_display();  
             return 1;
         }
         current_cmd = current_cmd->next;
