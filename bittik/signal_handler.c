@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/11 05:45:26 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 06:29:14 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,9 @@ void handle_sigint_heredoc(int signum)
 {
     (void)signum;
     printf("\n");
-    
+    // Heredoc'tan çıkarken readline state'ini temizle
+    rl_on_new_line();
+    rl_replace_line("", 0);
 }
 
 void heredoc_signals(void)

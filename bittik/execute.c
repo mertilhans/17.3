@@ -9,8 +9,6 @@
 #include <string.h>
 #include <signal.h>
 
-
-
 void ft_putendl_fd(char *str, int fd)
 {
     if (!str)
@@ -18,7 +16,6 @@ void ft_putendl_fd(char *str, int fd)
     while(*str)
         write(fd,str++,1);
 }
-
 
 
 void close_all_fds_except_std(t_parser *cmd)
@@ -36,7 +33,6 @@ void close_all_fds_except_std(t_parser *cmd)
         cmd_list = cmd_list->next;
     }
 }
-
 
 char *heredoc_readline(const char *prompt)
 {
@@ -115,7 +111,41 @@ char *heredoc_readline(const char *prompt)
     }
 }
 
+int heredoc_append_line(t_heredoc_buffer *buf)
+{
+    size_t line_len;
 
+    line_len = ft_strlen(buf->line);
+    buf->line_with_nl = gb_malloc(line_len + 2);
+    if (!buf->line_with_nl)
+        return 0;
+    ft_strcpy(buf->line_with_nl, buf->line);
+    buf->line_with_nl[line_len] = '\n';
+    buf->line_with_nl[line_len + 1] = '\0';
+    buf->new_content = gb_malloc(ft_strlen(buf->content) + ft_strlen(buf->line_with_nl) + 1);
+    if (!buf->new_content)
+    {
+        gc_free(buf->line_with_nl);
+        return 0;
+    }
+    ft_strcpy(buf->new_content, buf->content);
+    ft_strcat(buf->new_content, buf->line_with_nl);
+    gc_free(buf->content);
+    gc_free(buf->line_with_nl);
+    buf->content = buf->new_content;
+    return (1);
+}
+
+void not_her_app_exp(t_heredoc_buffer *buf)
+{
+    perror("line error");
+    gc_free(buf->line);
+    gc_free(buf->content);
+    // Signal'ları düzelt ve shell'e geri dön
+    setup_interactive_signals();
+}
+
+// readline_loop - Basic heredoc reading without expansion
 char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
 {
     heredoc_signals();
@@ -126,6 +156,9 @@ char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
         
         if (!buf->line)
         {
+            // Heredoc'tan çıkarken readline state'ini temizle
+            rl_on_new_line();
+            rl_replace_line("", 0);
             setup_interactive_signals();
             
             if (errno == EINTR)
@@ -155,6 +188,89 @@ char *readline_loop(t_heredoc_buffer *buf, const char *delimiter)
         gc_free(buf->line);
         buf->line = NULL;
     }
+    
+    // Heredoc başarıyla bittiğinde de readline state'ini temizle
+    rl_on_new_line();
+    rl_replace_line("", 0);
+    setup_interactive_signals();
+    return buf->content;
+}
+
+char *expand_heredoc_line_impl(char *line, t_env *env_list)
+{
+    char *expanded;
+
+    if (!line)
+        return NULL;
+    expanded = expand_heredoc_line(line, env_list);
+    if (expanded)
+        return expanded;
+    else
+        return ft_strdup(line);
+}
+
+int heredoc_append_expanded(t_heredoc_buffer *buf, t_env *env_list)
+{
+    char *expanded_line;
+    char *old_line;
+    int result;
+
+    old_line = buf->line;
+    expanded_line = expand_heredoc_line_impl(buf->line, env_list);
+    buf->line = expanded_line;
+    result = heredoc_append_line(buf);
+    buf->line = old_line;
+    if (expanded_line != old_line)
+        gc_free(expanded_line);
+    return result;
+}
+
+char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter, t_env *env_list)
+{
+    heredoc_signals();
+    while (1)
+    {
+        errno = 0;
+        buf->line = heredoc_readline("> ");
+        
+        if (!buf->line)
+        {
+            // Heredoc'tan çıkarken readline state'ini temizle
+            rl_on_new_line();
+            rl_replace_line("", 0);
+            setup_interactive_signals();
+            
+            if (errno == EINTR)
+            {
+                set_last_exit_status(130);
+                return NULL;
+            }
+            else
+            {
+                printf("bash: warning: here-document at line 1 delimited by end-of-file (wanted `%s')\n", delimiter);
+                set_last_exit_status(0);
+                return buf->content;
+            }
+        }
+        
+        if ((size_t)ft_strlen(buf->line) == buf->delimiter_len &&
+            ft_strcmp(buf->line, delimiter) == 0)
+        {
+            gc_free(buf->line);
+            break;
+        }
+        if (!heredoc_append_expanded(buf, env_list))
+        {
+            not_her_app_exp(buf);
+            return NULL;
+        }
+        gc_free(buf->line);
+        buf->line = NULL;
+    }
+    
+    // Heredoc başarıyla bittiğinde de readline state'ini temizle
+    rl_on_new_line();
+    rl_replace_line("", 0);
     setup_interactive_signals();
     return buf->content;
 }
@@ -277,11 +393,11 @@ int redir_in(t_redirection *redir)
     if (fd < 0)
     {
         perror(redir->filename);
-        return 1; /// -1 birşey deniyorum bozulursa bakcam
+        return 1;
     }
     dup2(fd, STDIN_FILENO);
     close(fd);
-    return 0; // Success
+    return 0;
 }
 
 int redir_out(t_redirection *redir)
@@ -292,7 +408,7 @@ int redir_out(t_redirection *redir)
     if (fd < 0)
     {
         perror(redir->filename);
-        return (1); // birşey daha deniyom
+        return (1);
     }
     dup2(fd, STDOUT_FILENO);
     close(fd);
@@ -307,119 +423,12 @@ int redir_append(t_redirection *redir)
     if (fd < 0)
     {
         perror(redir->filename);
-        return (1); // buda -1 birşey deniyorum 
+        return (1);
     }
     dup2(fd, STDOUT_FILENO);
     close(fd);
     return (0);
 }
-
-int heredoc_append_line(t_heredoc_buffer *buf)
-{
-    size_t line_len;
-
-    line_len = ft_strlen(buf->line);
-    buf->line_with_nl = gb_malloc(line_len + 2);
-    if (!buf->line_with_nl)
-        return 0;
-    ft_strcpy(buf->line_with_nl, buf->line);
-    buf->line_with_nl[line_len] = '\n';
-    buf->line_with_nl[line_len + 1] = '\0';
-    buf->new_content = gb_malloc(ft_strlen(buf->content) + ft_strlen(buf->line_with_nl) + 1);
-    if (!buf->new_content)
-    {
-        gc_free(buf->line_with_nl);
-        return 0;
-    }
-    ft_strcpy(buf->new_content, buf->content);
-    ft_strcat(buf->new_content, buf->line_with_nl);
-    gc_free(buf->content);
-    gc_free(buf->line_with_nl);
-    buf->content = buf->new_content;
-    return (1);
-}
-
-
-char *expand_heredoc_line_impl(char *line, t_env *env_list)
-{
-    char *expanded;
-
-    if (!line)
-        return NULL;
-    expanded = expand_heredoc_line(line, env_list);
-    if (expanded)
-        return expanded;
-    else
-        return ft_strdup(line);
-}
-
-int heredoc_append_expanded(t_heredoc_buffer *buf, t_env *env_list)
-{
-    char *expanded_line;
-    char *old_line;
-    int result;
-
-    old_line = buf->line;
-    expanded_line = expand_heredoc_line_impl(buf->line, env_list);
-    buf->line = expanded_line;
-    result = heredoc_append_line(buf);
-    buf->line = old_line;
-    if (expanded_line != old_line)
-        gc_free(expanded_line);
-    return result;
-}
-
-void not_her_app_exp(t_heredoc_buffer *buf)
-{
-    perror("line error");
-    gc_free(buf->line);
-    gc_free(buf->content);
-    setup_interactive_signals();
-}
-
-char *readline_loop_expand(t_heredoc_buffer *buf, const char *delimiter, t_env *env_list)
-{
-    heredoc_signals();
-    while (1)
-    {
-        errno = 0;
-        buf->line = heredoc_readline("> ");
-        
-        if (!buf->line)
-        {
-            setup_interactive_signals();
-            
-            if (errno == EINTR)
-            {
-                set_last_exit_status(130);
-                return NULL;
-            }
-            else
-            {
-                printf("bash: warning: here-document at line 1 delimited by end-of-file (wanted `%s')\n", delimiter);
-                set_last_exit_status(0);
-                return buf->content;
-            }
-        }
-        
-        if ((size_t)ft_strlen(buf->line) == buf->delimiter_len &&
-            ft_strcmp(buf->line, delimiter) == 0)
-        {
-            gc_free(buf->line);
-            break;
-        }
-        if (!heredoc_append_expanded(buf, env_list))
-        {
-            not_her_app_exp(buf);
-            return NULL;
-        }
-        gc_free(buf->line);
-        buf->line = NULL;
-    }
-    setup_interactive_signals();
-    return buf->content;
-}
-
 
 char *read_single_heredoc_block(char *delimiter)
 {
@@ -482,7 +491,6 @@ char *read_heredoc_with_expand(char *delimiter, t_env *env_list)
     return result ? result : buf.content;
 }
 
-
 int ft_h_built_expand(t_redirection *current_redir, t_heredoc_data *data, t_env *env_list)
 {
     int pipefd[2];
@@ -536,7 +544,6 @@ int h_loop(t_parser *cmd, t_heredoc_data *data, t_env *env_list)
     return 0;
 }
 
-
 int process_heredocs(t_parser *cmd, t_env *env_list)
 {
     t_heredoc_data h_data;
@@ -575,6 +582,7 @@ int setup_file_redirections(t_parser *cmd)
     }
     return (0);
 }
+
 int ft_builtin_call_3(t_parser *cmd, t_env **env_list)
 {
     if (ft_strcmp(cmd->argv[0], "env") == 0)
@@ -583,42 +591,40 @@ int ft_builtin_call_3(t_parser *cmd, t_env **env_list)
         {
             ft_putendl_fd(" : No such file or directory\n", 2);
             set_last_exit_status(127);
-            return 127; // 1 yerine 127
+            return 127;
         }
         builtin_env(*env_list);
-        // env built_in içinde set_last_exit_status(0) yapıyor
         return 0;
     }
-    return -1; // builtin değil
+    return -1;
 }
-
 
 int ft_builtin_call_2(t_parser *cmd, t_env **env_list)
 {
     if (ft_strcmp(cmd->argv[0], "export") == 0)
     {
         builtin_export(cmd, env_list);
-        return get_last_exit_status(); // builtin içinde set ediliyor
+        return get_last_exit_status();
     }
     if (ft_strcmp(cmd->argv[0], "pwd") == 0)
     {
         builtin_pwd();
-        return get_last_exit_status(); // builtin içinde set ediliyor
+        return get_last_exit_status();
     }
     if (ft_strcmp(cmd->argv[0], "unset") == 0)
     {
         builtin_unset(cmd, env_list);
-        return get_last_exit_status(); // builtin içinde set ediliyor
+        return get_last_exit_status();
     }
     
     int result = ft_builtin_call_3(cmd, env_list);
     if (result != -1)
         return result;
-    return -1; // builtin değil
+    return -1;
 }
+
 void close_fd(t_exec_data *data)
 {
-
     if (data->original_stdin != -1)
         close(data->original_stdin);
     if (data->original_stdout != -1)
@@ -630,27 +636,26 @@ int ft_builtin_call(t_parser *cmd, t_exec_data *data, t_env **env_list)
     if (ft_strcmp(cmd->argv[0], "echo") == 0)
     {
         built_echo(cmd);
-        return get_last_exit_status(); // builtin içinde set ediliyor
+        return get_last_exit_status();
     }
     if (ft_strcmp(cmd->argv[0], "cd") == 0)
     {
         int result = built_cd(cmd);
-        return result; // cd kendi exit status'ını döndürüyor
+        return result;
     }
     if (ft_strcmp(cmd->argv[0], "exit") == 0)
     {
         cmd->fd_i = data->original_stdin;
         cmd->fd_o = data->original_stdout;
         builtin_exit(cmd);
-        return 0; // exit çağrısı bu noktaya ulaşmaz
+        return 0;
     }
     
     int result = ft_builtin_call_2(cmd, env_list);
     if (result != -1)
         return result;
-    return -1; // builtin değil
+    return -1;
 }
-
 
 int is_builtin(t_parser *cmd)
 {
@@ -682,7 +687,6 @@ int count_commands(t_parser *cmd)
 
 int ft_redir_in_or_out(t_redirection *redir)
 {
-
     if (redir->type == REDIR_OUT)
     {
         if (redir_out(redir) != 0)
@@ -711,8 +715,8 @@ int ft_heredoc(t_parser *cmd)
         cmd->heredoc_fd = -1;
     }
     return (0);
-
 }
+
 int ft_redir_ctrl(t_parser *cmd)
 {
     t_redirection *redir;
@@ -754,6 +758,7 @@ int ft_redir_ctrl(t_parser *cmd)
     }
     return (0);
 }
+
 void ft_directory(t_parser *cmd, t_exec_data *data)
 {
     ft_putendl_fd("bash :", 2);
@@ -763,8 +768,9 @@ void ft_directory(t_parser *cmd, t_exec_data *data)
     close_all_fds_except_std(cmd);
     gb_free_all();
     env_gb_free_all();
-    exit(126); // Is a directory error
+    exit(126);
 }
+
 void ft_not_directory(t_parser *cmd,t_exec_data *data)
 {
     ft_putendl_fd("bash :",2);
@@ -775,7 +781,6 @@ void ft_not_directory(t_parser *cmd,t_exec_data *data)
     gb_free_all();
     env_gb_free_all();
     exit(1);
-
 }
 
 void ft_not_executable(t_parser *cmd, t_exec_data *data, char *exec_path)
@@ -787,13 +792,13 @@ void ft_not_executable(t_parser *cmd, t_exec_data *data, char *exec_path)
         ft_putendl_fd("bash :", 2);
         ft_putendl_fd(cmd->argv[0], 2);
         ft_putendl_fd("Permission denied\n", 2);
-        exit_code = 126; // Permission denied
+        exit_code = 126;
     }
     else
     {
         ft_putendl_fd(cmd->argv[0], 2);
         ft_putendl_fd(": command not found\n", 2);
-        exit_code = 127; // Command not found
+        exit_code = 127;
     }
     
     close_fd(data);
@@ -802,6 +807,7 @@ void ft_not_executable(t_parser *cmd, t_exec_data *data, char *exec_path)
     env_gb_free_all();
     exit(exit_code);
 }
+
 void ft_is_builtin(t_parser *cmd, t_exec_data *data, t_env **env_list)
 {
     int exit_code = ft_builtin_call(cmd, data, env_list);
@@ -811,6 +817,7 @@ void ft_is_builtin(t_parser *cmd, t_exec_data *data, t_env **env_list)
     env_gb_free_all();
     exit(exit_code); 
 }
+
 void ft_exec_start(t_parser *cmd, t_exec_data *data, t_env **env_list)
 {
     char *exec_path;
@@ -835,6 +842,7 @@ void ft_exec_start(t_parser *cmd, t_exec_data *data, t_env **env_list)
     env_gb_free_all();
     exit(126); 
 }
+
 void fd_not_stdin(t_exec_data *data)
 {
     if (dup2(data->in_fd, STDIN_FILENO) == -1)
@@ -855,8 +863,8 @@ void next_cmd_and_fd(t_exec_data *data)
     }
     close(data->pipefd[0]);
     close(data->pipefd[1]);
-
 }
+
 void child_process_exec(t_parser *cmd, t_exec_data *data, t_env **env_list)
 {
     setup_child_signals();
@@ -907,7 +915,6 @@ int fork_pipe_exec(t_parser *cmd, t_exec_data *data, t_env **env_list)
     }
     if (pid == 0)
     {
-       // signal(SIGPIPE, SIG_IGN);
         child_process_exec(cmd, data, env_list);
         exit(1);
     }
@@ -938,7 +945,6 @@ int setup_and_fork(t_parser *cmd, t_exec_data *data, t_env **env_list)
     data->pids[data->i++] = pid;
     return (pid);
 }
-
 
 void execute_loop(t_parser *cmd_list, t_exec_data *data, t_env **env_list)
 {
@@ -975,10 +981,18 @@ int heredoc_fd_error(t_parser *cmd_list,t_exec_data *data,t_parser *current_cmd)
 {
     t_parser *tmp_cmd;
 
-    dup2(data->original_stdin, STDIN_FILENO);
-    close(data->original_stdin);
-    dup2(data->original_stdout, STDOUT_FILENO);
-    close(data->original_stdout);
+    // Stdout'u düzgün restore et - ÇOK ÖNEMLİ!
+    if (data->original_stdin != -1)
+    {
+        dup2(data->original_stdin, STDIN_FILENO);
+        close(data->original_stdin);
+    }
+    if (data->original_stdout != -1)
+    {
+        dup2(data->original_stdout, STDOUT_FILENO);
+        close(data->original_stdout);
+    }
+    
     tmp_cmd = cmd_list;
     while(tmp_cmd && tmp_cmd != current_cmd->next)
     {
@@ -1004,6 +1018,8 @@ int heredoc_handle(t_parser *cmd_list, t_exec_data *data, t_env *env_list)
         {
             set_last_exit_status(130);
             heredoc_fd_error(cmd_list, data, current_cmd);
+            // Heredoc interrupt sonrası signal'ları düzelt - ÇOK ÖNEMLİ!
+            setup_interactive_signals();
             return 1;
         }
         current_cmd = current_cmd->next;
@@ -1013,6 +1029,9 @@ int heredoc_handle(t_parser *cmd_list, t_exec_data *data, t_env *env_list)
 
 int n_next_or_built(t_parser *cmd_list, t_exec_data *data, t_env **env_list)
 {
+    // Builtin çalıştırmadan önce signal'ları garanti et
+    setup_interactive_signals();
+    
     if (cmd_list->heredoc_fd != -1 && cmd_list->heredoc_fd != -2)
     {
         if (dup2(cmd_list->heredoc_fd, STDIN_FILENO) == -1)
@@ -1029,12 +1048,27 @@ int n_next_or_built(t_parser *cmd_list, t_exec_data *data, t_env **env_list)
         if (setup_file_redirections(cmd_list) != 0)
             set_last_exit_status(1);
         else
+        {
+            // Builtin çalıştır
             ft_builtin_call(cmd_list, data, env_list);
+        }
     }
-    dup2(data->original_stdin, STDIN_FILENO);
-    close(data->original_stdin);
-    dup2(data->original_stdout, STDOUT_FILENO);
-    close(data->original_stdout);
+    
+    // Fd'leri restore et
+    if (data->original_stdin != -1)
+    {
+        dup2(data->original_stdin, STDIN_FILENO);
+        close(data->original_stdin);
+    }
+    if (data->original_stdout != -1)
+    {
+        dup2(data->original_stdout, STDOUT_FILENO);
+        close(data->original_stdout);
+    }
+    
+    // Son olarak signal'ları reset et
+    setup_interactive_signals();
+    
     return get_last_exit_status();
 }
 
@@ -1044,6 +1078,7 @@ void exe_loop(t_parser *cmd_list,t_exec_data *data,t_env **env_list)
     wait_pids(data);
     gc_free(data->pids);
 }
+
 int ft_data_pids(t_parser *cmd_list, t_exec_data *data, t_env **env_list)
 {
     t_parser *current_cmd;
@@ -1095,18 +1130,9 @@ void finish_fd(t_parser *cmd_list,t_exec_data *data)
 
 int data_init(t_exec_data *data, t_parser *cmd_list, char **env, int *pid_len)
 {
+    // Original fd'leri sakla
     data->original_stdin = dup(STDIN_FILENO);
     data->original_stdout = dup(STDOUT_FILENO);
-    *pid_len = count_commands(cmd_list);
-    data->pids_size = *pid_len;
-    data->pids = NULL;
-    data->i = 0;
-    cmd_list->fd_i = data->original_stdin;
-    cmd_list->fd_o = data->original_stdout;    
-    data->env = env;
-    data->in_fd = STDIN_FILENO;
-    data->pipefd[0] = -1;
-    data->pipefd[1] = -1;
     
     if (data->original_stdin == -1 || data->original_stdout == -1)
     {
@@ -1117,11 +1143,26 @@ int data_init(t_exec_data *data, t_parser *cmd_list, char **env, int *pid_len)
             close(data->original_stdout);
         return 1;
     }
+    
+    *pid_len = count_commands(cmd_list);
+    data->pids_size = *pid_len;
+    data->pids = NULL;
+    data->i = 0;
+    
+    // Parser'a da fd'leri ver
+    cmd_list->fd_i = data->original_stdin;
+    cmd_list->fd_o = data->original_stdout;    
+    
+    data->env = env;
+    data->in_fd = STDIN_FILENO;
+    data->pipefd[0] = -1;
+    data->pipefd[1] = -1;
+    
     return 0;
 }
+
 int heredoc_handle_init(t_parser *cmd_list)
 {
-
     t_parser *tmp_cmd = cmd_list;
     while (tmp_cmd)
     {
@@ -1142,11 +1183,31 @@ int execute_cmds(t_parser *cmd_list, char **env, t_env **env_list)
 
     if(data_init(&data,cmd_list,env,&pid_len))
         return (1);
+        
     if (heredoc_handle(cmd_list, &data, *env_list))
     {
+        // Heredoc error'dan sonra fd'leri restore et
+        if (data.original_stdin != -1)
+        {
+            dup2(data.original_stdin, STDIN_FILENO);
+            close(data.original_stdin);
+        }
+        if (data.original_stdout != -1)
+        {
+            dup2(data.original_stdout, STDOUT_FILENO);
+            close(data.original_stdout);
+        }
+        
+        // ÇOK ÖNEMLİ: Signal state'ini tamamen reset et!
+        setup_interactive_signals();
+        
         if (heredoc_handle_init(cmd_list))
             return (get_last_exit_status());
     }
+    
+    // Builtin check'inden önce signal'ları garanti et
+    setup_interactive_signals();
+    
     if (pid_len == 1 && is_builtin(cmd_list))
     {
         set_last_exit_status(n_next_or_built(cmd_list, &data, env_list));
@@ -1162,6 +1223,7 @@ int execute_cmds(t_parser *cmd_list, char **env, t_env **env_list)
     finish_fd(cmd_list, &data);
     return (get_last_exit_status());
 }
+
 int process_command(t_parser *cmd, t_exec_data *data, t_env **env_list)
 {
     data->pipefd[0] = -1;

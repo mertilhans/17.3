@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 03:36:25 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 05:20:10 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 06:29:06 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,24 +138,49 @@ int process_command_line(char *line, t_env **env_list, char **env)
     t_parser *cmd_list;
     char **updated_env;
 
+    // Input'u temizle - başta ve sonda boşlukları trim et
+    while (*line && (*line == ' ' || *line == '\t'))
+        line++;
+    
+    if (!line || *line == '\0')
+        return 0;
+
     add_history(line);
     gb_malloc(ft_strlen(line));
     
     tokens = tokenize_input(line);
     if (!tokens)
-        // Tokenize hatası - zaten set_last_exit_status yapılmış
+    {
+        // Tokenize fail olursa signal'ları reset et
+        setup_interactive_signals();
         return 0; // Shell devam etsin
+    }
+    
     cmd_list = parse_tokens(tokens, *env_list);
     if (!cmd_list)
-        return 0; // Shell devam etsin
-    updated_env = env_list_to_array(*env_list);
-    if (updated_env)
     {
-        execute_cmds(cmd_list, updated_env, env_list);
-        cleanup_env_array(updated_env);
+        // Parse fail olursa signal'ları reset et  
+        setup_interactive_signals();
+        return 0; // Shell devam etsin
     }
-    else
-        execute_cmds(cmd_list, env, env_list);
+    
+    // Debug: Command'ı kontrol et
+    if (cmd_list && cmd_list->argv && cmd_list->argv[0])
+    {
+        // Command execute et
+        updated_env = env_list_to_array(*env_list);
+        if (updated_env)
+        {
+            execute_cmds(cmd_list, updated_env, env_list);
+            cleanup_env_array(updated_env);
+        }
+        else
+            execute_cmds(cmd_list, env, env_list);
+    }
+    
+    // Execute sonrası signal'ları reset et
+    setup_interactive_signals();
+    
     return 0; // Shell devam etsin
 }
 
@@ -165,6 +190,13 @@ void shell_loop(t_env *env_list, char **env)
 
     while (1)
     {
+        // Her loop başında signal'ları garanti et
+        setup_interactive_signals();
+        
+        // Readline state'ini temizle - ÇOK ÖNEMLİ!
+        rl_on_new_line();
+        rl_replace_line("", 0);
+        
         line = readline("MiniShell->>>   ");
         if (!line)
         {
@@ -176,14 +208,25 @@ void shell_loop(t_env *env_list, char **env)
             free(line);
             continue; // Boş satır, devam et
         }
-        if (process_command_line(line, &env_list, env))
+        
+        // Debug için line'ı kontrol et
+        if (line && ft_strlen(line) > 0)
         {
-            free(line);
-            break; // Shell'den çık
+            if (process_command_line(line, &env_list, env))
+            {
+                free(line);
+                break; // Shell'den çık
+            }
         }
         free(line);
+        
+        // Loop sonunda da readline state'ini temizle
+        rl_on_new_line();
+        rl_replace_line("", 0);
+        setup_interactive_signals();
     }
 }
+
 int main(int ac, char **av, char **env)
 {
     t_env *env_list;
@@ -200,5 +243,5 @@ int main(int ac, char **av, char **env)
     env_gb_free_all();
     gb_free_all();
     
-    return get_last_exit_status(); 
+    return get_last_exit_status();
 }

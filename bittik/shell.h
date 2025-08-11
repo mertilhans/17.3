@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 03:36:35 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 06:08:12 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 06:44:19 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,6 +166,23 @@ typedef struct s_all
 
 // --- PARSER FONKSİYON PROTOTİPLERİ ---
 t_parser *parse_tokens(t_token *tokens, t_env *env_list);
+
+// NEW PARSER FUNCTIONS
+void init_redirection(t_redirection *new_redir, t_redir_type type, char *filename, int no_expand);
+void process_redirection_expansion(t_token *tokens, t_parser *cmd, t_all *all, t_redir_type type);
+int has_quote_chars(char *delimiter);
+char *remove_quotes(char *delimiter);
+void expand_argv_capacity(t_parser *cmd, int *argc);
+int is_empty_expansion(char *original_token, char *expanded);
+int should_split_expansion(char *original_token, char *expanded);
+void add_split_args(t_parser *cmd, int *argc, char **split_args);
+void cleanup_split_args(char **split_args);
+void handle_split_expansion(t_parser *cmd, int *argc, char *original_token, char *expanded);
+void handle_normal_expansion(t_parser *cmd, int *argc, t_token *token, char *expanded);
+void init_parser_cmd(t_parser *cmd);
+void finalize_cmd(t_parser *cmd, int argc, t_all *data);
+void handle_pipe_errors(t_token **tokens);
+int check_parse_errors(t_all *all);
 
 void ft_add_redirection(t_parser *cmd, char *filename, t_redir_type type);
 void add_redirection_with_expansion(t_parser *cmd, t_redir_type type, char *filename, int no_expand);
