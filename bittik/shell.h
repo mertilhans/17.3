@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 03:36:35 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 05:52:34 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 06:08:12 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,6 @@
 #include <signal.h>
 
 // Garbage Collector structure
-
 typedef struct s_heredoc_data
 {
     int last_heredoc_fd;
@@ -32,6 +31,7 @@ typedef struct s_heredoc_data
     char *heredoc_content;
     
 }t_heredoc_data;
+
 typedef struct s_exec_data
 {
     int in_fd;
@@ -74,7 +74,6 @@ typedef struct  s_token_data
 	int capacity;
 	
 }t_token_data;
-
 
 typedef struct s_gb
 {
@@ -127,7 +126,6 @@ typedef struct s_tokenizer
     char    current;     // Mevcut karakter
 } t_tokenizer;
 
-
 // Redirection türlerini tanımlayan enum
 typedef enum e_redir_type
 {
@@ -166,21 +164,6 @@ typedef struct s_all
     t_env  *env_list;
 }t_all;
 
-//typedef struct s_all
-//{
-//    t_env       *env_list;
-//    t_parser    *cmd_list;
-//    t_parser    *parser;
-//    int         exit_status;
-//} t_all;
-
-//typedef struct s_all
-//{
-//	t_env     *env_list;
-//	t_parser  *cmd_list;
-//	t_parser  *parser;       
-//	int        exit_status;  
-//}	t_all;
 // --- PARSER FONKSİYON PROTOTİPLERİ ---
 t_parser *parse_tokens(t_token *tokens, t_env *env_list);
 
@@ -224,7 +207,6 @@ size_t ft_strlcpy(char *dst, const char *src, size_t size);
 char *ft_strcpy(char *dest, const char *src);
 char *ft_strcat(char *dest, const char *src);
 char *ft_itoa(int n);
-
 
 int execute_cmds(t_parser *cmd_list, char **env, t_env **env_list);
 void free_parser_list(t_parser *cmd_list);
@@ -324,6 +306,8 @@ char **split_expanded_string(char *str);
 char *read_heredoc_with_expand(char *delimiter, t_env *env_list);
 int ft_h_built_expand(t_redirection *current_redir, t_heredoc_data *data, t_env *env_list);
 int process_heredocs(t_parser *cmd, t_env *env_list);
+int heredoc_append_line(t_heredoc_buffer *buf);
+void not_her_app_exp(t_heredoc_buffer *buf);
 
 void close_all_fds_except_std(t_parser *cmd);
 void tt(t_exec_data *data);

@@ -100,7 +100,6 @@ int built_cd(t_parser *cmd)
         }
     }
     
-    // PWD ve OLDPWD güncelle
     char *new_pwd = getcwd(NULL, 0);
     if (new_pwd)
     {
@@ -190,7 +189,7 @@ void builtin_exit(t_parser *cmd)
             close_all_fds_except_std(cmd);
             gb_free_all();
             env_gb_free_all();
-            exit(2); // Numeric argument required hatası için exit code 2
+            exit(2); 
         }
         exit_code = ft_atoi(cmd->argv[1]);
         exit_code = ((exit_code % 256) + 256) % 256;
@@ -202,17 +201,101 @@ void builtin_exit(t_parser *cmd)
     env_gb_free_all();
     exit(exit_code);
 }
-
-
-void builtin_env(t_env *env_list)
+static void env_bubble_sort(char **env_array, int count)
 {
+    int i, j;
+    char *temp;
+    int swapped;
+    
+    if (!env_array || count <= 1)
+        return;
+    
+    for (i = 0; i < count - 1; i++)
+    {
+        swapped = 0;
+        for (j = 0; j < count - i - 1; j++)
+        {
+            if (ft_strcmp(env_array[j], env_array[j + 1]) > 0)
+            {
+                temp = env_array[j];
+                env_array[j] = env_array[j + 1];
+                env_array[j + 1] = temp;
+                swapped = 1;
+            }
+        }
+        if (swapped == 0)
+            break;
+    }
+}
+
+static char **create_sorted_env_array(t_env *env_list)
+{
+    int count = 0;
     t_env *current = env_list;
+    char **env_array;
+    int i = 0;
     
     while (current)
     {
-        if (current->value)
-            printf("%s=%s\n", current->key, current->value);
+        if (current->value) // Sadece değeri olan env'ları say
+            count++;
         current = current->next;
     }
+    
+    if (count == 0)
+        return NULL;
+    
+
+    env_array = gb_malloc(sizeof(char*) * (count + 1));
+    if (!env_array)
+        return NULL;
+
+    current = env_list;
+    while (current && i < count)
+    {
+        if (current->value)
+        {
+            int len = ft_strlen(current->key) + ft_strlen(current->value) + 2; // +2 for '=' and '\0'
+            env_array[i] = gb_malloc(len);
+            if (!env_array[i])
+                return NULL;
+            ft_strcpy(env_array[i], current->key);
+            ft_strcat(env_array[i], "=");
+            ft_strcat(env_array[i], current->value);
+            i++;
+        }
+        current = current->next;
+    }
+    env_array[i] = NULL;
+    
+    env_bubble_sort(env_array, count);
+    
+    return env_array;
+}
+
+void builtin_env(t_env *env_list)
+{
+    char **sorted_env = create_sorted_env_array(env_list);
+    int i = 0;
+    
+    if (!sorted_env)
+    {
+        set_last_exit_status(0);
+        return;
+    }
+    
+    while (sorted_env[i])
+    {
+        printf("%s\n", sorted_env[i]);
+        i++;
+    }
+
+    i = 0;
+    while (sorted_env[i])
+    {
+        gc_free(sorted_env[i]);
+        i++;
+    }
+    gc_free(sorted_env);
     set_last_exit_status(0);
 }

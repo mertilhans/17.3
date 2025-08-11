@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/03 04:24:43 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/11 04:36:02 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/11 06:01:40 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -230,5 +230,34 @@ char *ft_itoa(int n)
         str[0] = '-'; 
     return (str);
 }
+char *ft_strcpy(char *dest, const char *src)
+{
+    size_t i;
 
+    i = 0;
+    while (src[i])
+    {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+    return dest;
+}
+char *ft_strcat(char *dest, const char *src)
+{
+    size_t i;
+    size_t j;
+
+    j = 0;
+    i = 0;
+    while (dest[i])
+        i++;
+    while (src[j])
+    {
+        dest[i + j] = src[j];
+        j++;
+    }
+    dest[i + j] = '\0';
+    return (dest);
+}
 
