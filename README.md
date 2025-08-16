@@ -1,4 +1,4 @@
-# 🐚 MiniShell Projesi - Kapsamlı Teknik Dokümantasyon ve Kavramsal Analiz
+# 🐚 MiniShell  - Teknik Dokümantasyon ve Kavramsal Analiz
 
 ## Giriş: MiniShell Nedir ve Bizden Ne Bekleniyor?
 
