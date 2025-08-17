@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   export_basic.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: husarpka <husarpka@student.42.fr>          +#+  +:+       +#+        */
+/*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/14 20:34:47 by husarpka         ###   ########.fr       */
+/*   Updated: 2025/08/17 04:04:37 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,9 +16,8 @@
 
 t_export	**get_export_list(void)
 {
-	static t_export	*g_export_list;
+	static t_export	*g_export_list = NULL;
 
-	g_export_list = NULL;
 	return (&g_export_list);
 }
 

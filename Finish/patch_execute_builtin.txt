@@ -1,0 +1,13 @@
+// built_cd fonksiyonuna yeni parametreler eklendiği için, ft_builtin_call fonksiyonunda çağrılırken env_list ve export_list parametreleri de eklenmeli.
+// export_list'i almak için get_export_list() fonksiyonu kullanılacak.
+//
+// Aşağıdaki değişiklik yapılmalı:
+//
+// if (ft_strcmp(cmd->argv[0], "cd") == 0)
+// {
+//     result = built_cd(cmd, env_list, export_list);
+//     return result;
+// }
+//
+// export_list tanımı eklenmeli:
+// t_export **export_list = get_export_list();

@@ -6,12 +6,13 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/01 02:17:36 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/17 17:28:19 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "shell.h"
 #include <stdint.h>
+
 
 void	*gb_malloc(size_t size)
 {

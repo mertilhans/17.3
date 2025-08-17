@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/16 02:46:32 by merilhan          #+#    #+#             */
-/*   Updated: 2025/08/16 02:46:33 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/17 04:37:34 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,6 @@ char	**split_expanded_string(char *str)
 	return (result);
 }
 
-// Mevcut kodunuzdaki realloc_result fonksiyonu
 char	*realloc_result(char *res, int total_len)
 {
 	char *new_res;

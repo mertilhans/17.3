@@ -6,13 +6,12 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/16 02:19:36 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/17 04:34:13 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "shell.h"
-#include <stdlib.h>
-#include <string.h>
+
 
 static int	count_env_entries(t_env *env_list)
 {
@@ -39,9 +38,9 @@ static char	*create_env_string(t_env *current)
 	env_str = env_gb_malloc(len);
 	if (!env_str)
 		return (NULL);
-	strcpy(env_str, current->key);
-	strcat(env_str, "=");
-	strcat(env_str, current->value);
+	ft_strcpy(env_str, current->key);
+	ft_strcat(env_str, "=");
+	ft_strcat(env_str, current->value);
 	return (env_str);
 }
 

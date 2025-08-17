@@ -5,43 +5,64 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/07/03 03:35:53 by husarpka          #+#    #+#             */
-/*   Updated: 2025/08/16 03:00:20 by merilhan         ###   ########.fr       */
+/*   Created: 2025/08/17 16:46:45 by merilhan          #+#    #+#             */
+/*   Updated: 2025/08/17 16:46:46 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "shell.h"
 
-void	tokenizer_free(t_tokenizer *tokenizer)
+t_token	*tokenizer_get_next_token_2(t_tokenizer *tokenizer)
 {
-	if (!tokenizer)
-		return ;
-	if (tokenizer->input)
-		gc_free(tokenizer->input);
-	gc_free(tokenizer);
-}
-void	lexer_advance(t_tokenizer *tokenizer)
-{
-	if (tokenizer->pos < tokenizer->len - 1)
+	if (tokenizer->current == '\0')
+		return (create_token(TOKEN_EOF, NULL));
+	if (tokenizer->current == '|')
 	{
-		tokenizer->pos++;
-		tokenizer->current = tokenizer->input[tokenizer->pos];
-	}
-	else
-		tokenizer->current = '\0';
-}
-char	lexer_peek(t_tokenizer *tokenizer)
-{
-	if (tokenizer->pos + 1 < tokenizer->len)
-		return (tokenizer->input[tokenizer->pos + 1]);
-	return ('\0');
-}
-int	ft_ispace(char c)
-{
-	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
-}
-void	ft_skip_space(t_tokenizer *tokenizer)
-{
-	while (tokenizer->current && ft_ispace(tokenizer->current))
 		lexer_advance(tokenizer);
+		return (create_token(TOKEN_PIPE, "|"));
+	}
+	if (tokenizer->current == '<')
+	{
+		if (lexer_peek(tokenizer) == '<')
+		{
+			lexer_advance(tokenizer);
+			lexer_advance(tokenizer);
+			return (create_token(TOKEN_HEREDOC, "<<"));
+		}
+		lexer_advance(tokenizer);
+		return (create_token(TOKEN_REDIR_IN, "<"));
+	}
+	return (NULL);
+}
+
+int	is_special_char(char c)
+{
+	return (c == '|' || c == '<' || c == '>');
+}
+
+char	*lexer_append_char(char c, t_token_data *data)
+{
+	char	*new_str;
+
+	if (data->len >= data->capacity - 1)
+	{
+		data->capacity *= 2;
+		new_str = gb_malloc(data->capacity);
+		if (!new_str)
+			return (NULL);
+		if (data->word)
+			ft_memcpy(new_str, data->word, data->len);
+		data->word = new_str;
+	}
+	data->word[(data->len)++] = c;
+	data->word[data->len] = '\0';
+	return (data->word);
+}
+
+void	ft_token_data_init(t_token_data *data)
+{
+	data->word = NULL;
+	data->capacity = 64;
+	data->len = 0;
+	data->in_quote = '\0';
 }

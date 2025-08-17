@@ -6,13 +6,13 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/01 02:17:36 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/16 06:05:39 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "shell.h"
 #include <stdlib.h>
-#include <string.h>
+
 
 void	unset_export_value(t_export **export_list, const char *key)
 {

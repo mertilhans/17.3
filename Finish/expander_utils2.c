@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   expander_utils2.c                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/08/16 05:49:33 by merilhan          #+#    #+#             */
+/*   Updated: 2025/08/17 04:37:41 by merilhan         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "shell.h"
 
 static char	*append_expansion(char *res, char *expanded)
@@ -74,7 +86,6 @@ char	*expand_variables(char *str, t_env *env_list)
 	return (res);
 }
 
-// Mevcut kodunuzdaki handle_special_vars fonksiyonu
 char	*handle_special_vars(char c)
 {
 	if (c == '?')

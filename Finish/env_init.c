@@ -3,16 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   env_init.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: husarpka <husarpka@student.42.fr>          +#+  +:+       +#+        */
+/*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/03 19:36:10 by husarpka         ###   ########.fr       */
+/*   Updated: 2025/08/16 06:03:31 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "shell.h"
-#include <stdlib.h>
-#include <string.h>
+
 
 static char	*extract_env_key(char *env_str)
 {

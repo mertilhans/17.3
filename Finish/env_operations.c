@@ -6,7 +6,7 @@
 /*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 00:00:00 by mertilhan13       #+#    #+#             */
-/*   Updated: 2025/08/16 02:21:21 by merilhan         ###   ########.fr       */
+/*   Updated: 2025/08/17 17:44:50 by merilhan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,9 +42,7 @@ void	set_env_value(t_env **env_list, char *key, char *value)
 	t_env	*new_node;
 
 	if (!env_list)
-	{
 		return ;
-	}
 	existing = find_env(*env_list, key);
 	if (existing)
 	{

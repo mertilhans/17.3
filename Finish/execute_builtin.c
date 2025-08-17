@@ -1,17 +1,30 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   execute_builtin.c                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/08/16 05:48:50 by merilhan          #+#    #+#             */
+/*   Updated: 2025/08/17 17:28:10 by merilhan         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "shell.h"
+
 
 int	is_builtin(t_parser *cmd)
 {
 	if (!cmd || !cmd->argv || !cmd->argv[0])
 		return (0);
-	if (strcmp(cmd->argv[0], "exit") == 0 || strcmp(cmd->argv[0], "cd") == 0)
+	if (ft_strcmp(cmd->argv[0], "exit") == 0 || ft_strcmp(cmd->argv[0], "cd") == 0)
 		return (1);
-	if (strcmp(cmd->argv[0], "pwd") == 0 || strcmp(cmd->argv[0], "echo") == 0)
+	if (ft_strcmp(cmd->argv[0], "pwd") == 0 || ft_strcmp(cmd->argv[0], "echo") == 0)
 		return (1);
-	if (strcmp(cmd->argv[0], "export") == 0 || strcmp(cmd->argv[0],
+	if (ft_strcmp(cmd->argv[0], "export") == 0 || ft_strcmp(cmd->argv[0],
 			"unset") == 0)
 		return (1);
-	if (strcmp(cmd->argv[0], "env") == 0)
+	if (ft_strcmp(cmd->argv[0], "env") == 0)
 		return (1);
 	return 0;
 }
@@ -25,11 +38,12 @@ int	ft_builtin_call(t_parser *cmd, t_exec_data *data, t_env **env_list)
 		built_echo(cmd);
 		return get_last_exit_status();
 	}
-	if (ft_strcmp(cmd->argv[0], "cd") == 0)
-	{
-		result = built_cd(cmd);
-		return result;
-	}
+       if (ft_strcmp(cmd->argv[0], "cd") == 0)
+       {
+	       t_export **export_list = get_export_list();
+	       result = built_cd(cmd, env_list, export_list);
+	       return result;
+       }
 	if (ft_strcmp(cmd->argv[0], "exit") == 0)
 	{
 		cmd->fd_i = data->original_stdin;

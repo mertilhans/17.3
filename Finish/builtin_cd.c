@@ -1,5 +1,17 @@
-#include "shell.h"
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   builtin_cd.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/08/16 05:48:24 by merilhan          #+#    #+#             */
+/*   Updated: 2025/08/17 18:12:01 by merilhan         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
+#include "shell.h"
+#include <stdio.h>
 static int	change_directory(t_parser *cmd, int arg_count, char **old_pwd_ptr)
 {
 	char	*home_dir;
@@ -26,23 +38,27 @@ static int	change_directory(t_parser *cmd, int arg_count, char **old_pwd_ptr)
 	return (0);
 }
 
-static void	update_and_free_pwd(char *old_pwd)
+static void	update_and_free_pwd(char *old_pwd, t_env **env_list, t_export **export_list)
 {
 	char	*new_pwd;
 
 	new_pwd = getcwd(NULL, 0);
 	if (new_pwd)
 	{
-		setenv("PWD", new_pwd, 1);
+		set_env_value(env_list, "PWD", new_pwd);
+		set_export_value(export_list, "PWD", new_pwd);
 		if (old_pwd)
-			setenv("OLDPWD", old_pwd, 1);
-		free(new_pwd);
+		{
+			set_env_value(env_list, "OLDPWD", old_pwd);
+			set_export_value(export_list, "OLDPWD", old_pwd);
+		}
+		env_gc_free(new_pwd);
 	}
 	if (old_pwd)
-		gc_free(old_pwd);
+		env_gc_free(old_pwd);
 }
 
-int	built_cd(t_parser *cmd)
+int	built_cd(t_parser *cmd, t_env **env_list, t_export **export_list)
 {
 	char	*old_pwd;
 	char	*current_pwd_for_free;
@@ -55,11 +71,11 @@ int	built_cd(t_parser *cmd)
 		arg_count++;
 	exit_code = change_directory(cmd, arg_count, &old_pwd);
 	if (exit_code == 0)
-		update_and_free_pwd(old_pwd);
+		update_and_free_pwd(old_pwd, env_list, export_list);
 	else if (old_pwd)
-		gc_free(old_pwd);
+		env_gc_free(old_pwd);
 	if (current_pwd_for_free)
-		free(current_pwd_for_free);
+		env_gc_free(current_pwd_for_free);
 	set_last_exit_status(exit_code);
 	return (exit_code);
 }

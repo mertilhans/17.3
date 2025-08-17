@@ -7,6 +7,8 @@ char	*heredoc_readline(const char *prompt)
 	char			ch;
 	int				status;
 
+	if (get_last_exit_status() == 130)
+		set_last_exit_status(0);
 	if (prompt)
 		write(STDOUT_FILENO, prompt, strlen(prompt));
 	st.line = NULL;
@@ -27,8 +29,13 @@ int	process_read_char(ssize_t bytes, char ch, t_heredoc_state *st)
 {
 	if (bytes <= 0)
 	{
-		if (bytes == 0 && !(st->at_line_start && st->len == 0))
-			return (1);
+		if (bytes == 0)
+		{
+			write(STDOUT_FILENO, "\n", 1);
+			
+			if (bytes == 0 && !(st->at_line_start && st->len == 0))
+				return (1);
+		}
 		if (st->line)
 			gc_free(st->line);
 		return (-1);

@@ -1,4 +1,17 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   execute_child.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: merilhan <merilhan@42kocaeli.com.tr>       +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/08/16 05:48:53 by merilhan          #+#    #+#             */
+/*   Updated: 2025/08/17 17:28:12 by merilhan         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "shell.h"
+#include <sys/stat.h>
 
 void	child_process_exec(t_parser *cmd, t_exec_data *data, t_env **env_list)
 {
@@ -27,7 +40,7 @@ void	ft_exec_start(t_parser *cmd, t_exec_data *data, t_env **env_list)
 	struct stat	path_stat;
 	char		*exec_path;
 
-	if (!cmd->argv[0] || cmd->argv[0][0] == '\0')
+	if (!cmd->argv[0])
 	{
 		ft_free_and_close(data, cmd);
 		exit(0);
